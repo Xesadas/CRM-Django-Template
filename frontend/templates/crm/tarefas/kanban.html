@@ -1,0 +1,760 @@
+{% extends 'crm/base_crm.html' %}
+{% load static %}
+{% load crm_extras %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* ==================== LAYOUT PRINCIPAL ==================== */
+.container-fluid {
+    max-width: 100vw;
+    overflow-x: hidden;
+    padding: 0 15px;
+}
+
+.main-content {
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+/* ==================== COMPONENTES DO KANBAN ==================== */
+.kanban-container {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.kanban-header {
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.kanban-title {
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 1.4em;
+    word-wrap: break-word;
+}
+
+/* ==================== ESTRUTURA DO KANBAN ==================== */
+.status-container {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 10px 5px 20px;
+    min-height: 500px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.status-column {
+    flex: 0 0 320px;
+    min-width: 320px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    min-height: 450px;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.status-header {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+.status-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-count {
+    background: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+.status-pendente .status-title i { color: #ffc107; }
+.status-pendente .status-header { border-left: 4px solid #ffc107; }
+
+.status-em_andamento .status-title i { color: #17a2b8; }
+.status-em_andamento .status-header { border-left: 4px solid #17a2b8; }
+
+.status-concluida .status-title i { color: #28a745; }
+.status-concluida .status-header { border-left: 4px solid #28a745; }
+
+.status-cancelada .status-title i { color: #dc3545; }
+.status-cancelada .status-header { border-left: 4px solid #dc3545; }
+
+.tarefas-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    min-height: 200px;
+    max-height: 60vh;
+    padding-right: 5px;
+}
+
+/* ==================== CARDS DE TAREFAS ==================== */
+.tarefa-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: grab;
+    transform-origin: center;
+    border-left: 4px solid #6c757d;
+}
+
+.tarefa-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.tarefa-card.dragging {
+    opacity: 0.8;
+    transform: scale(1.05) rotate(3deg);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    z-index: 1000;
+    cursor: grabbing;
+}
+
+/* Cores de prioridade */
+.tarefa-card.prioridade-urgente { border-left-color: #dc3545; }
+.tarefa-card.prioridade-alta { border-left-color: #fd7e14; }
+.tarefa-card.prioridade-media { border-left-color: #17a2b8; }
+.tarefa-card.prioridade-baixa { border-left-color: #6c757d; }
+
+.tarefa-card.vencida {
+    background: #fff5f5;
+    border-color: #ffcccc;
+}
+
+.card-header-tarefa {
+    font-size: 1.1em;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.card-body-tarefa {
+    font-size: 0.9em;
+}
+
+.card-row-tarefa {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.card-alert-tarefa {
+    background: #fff3cd;
+    color: #856404;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    margin: 10px 0;
+    border-left: 3px solid #ffc107;
+}
+
+.card-time-tarefa {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin: 8px 0;
+    padding-top: 8px;
+    border-top: 1px dashed #dee2e6;
+}
+
+/* ==================== FILTROS ==================== */
+.filtros-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.checkbox-group-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.checkbox-item-filtro {
+    flex: 0 0 auto;
+}
+
+/* ==================== ESTATÍSTICAS ==================== */
+.stats-cards {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    flex: 1;
+    min-width: 180px;
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.8em;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.stat-card.total { border-top: 4px solid #007bff; }
+.stat-card.pendentes { border-top: 4px solid #ffc107; }
+.stat-card.em_andamento { border-top: 4px solid #17a2b8; }
+.stat-card.concluidas { border-top: 4px solid #28a745; }
+.stat-card.vencidas { border-top: 4px solid #dc3545; }
+
+/* ==================== ESTADOS DE DRAG & DROP ==================== */
+.drag-over-tarefa {
+    background: #e3f2fd;
+    border: 2px dashed #2196f3;
+}
+
+.drop-ready-tarefa {
+    background: linear-gradient(45deg, #f8f9fa 25%, #e9ecef 25%, #e9ecef 50%, #f8f9fa 50%, #f8f9fa 75%, #e9ecef 75%);
+    background-size: 20px 20px;
+    animation: slide 1s linear infinite;
+    border: 2px solid #28a745;
+}
+
+/* ==================== SCROLLBARS ==================== */
+.tarefas-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tarefas-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.tarefas-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.status-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.status-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.status-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+/* ==================== RESPONSIVIDADE ==================== */
+@media (max-width: 1199px) {
+    .status-column {
+        flex: 0 0 280px;
+        min-width: 280px;
+    }
+}
+
+@media (max-width: 767px) {
+    .status-column {
+        flex: 0 0 220px;
+        min-width: 220px;
+        min-height: 400px;
+        padding: 12px;
+    }
+    
+    .stats-cards {
+        flex-direction: column;
+    }
+    
+    .stat-card {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 575px) {
+    .status-column {
+        flex: 0 0 200px;
+        min-width: 200px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block crm_content %}
+<!-- Estatísticas -->
+<div class="stats-cards">
+    <div class="stat-card total">
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Total de Tarefas</div>
+    </div>
+    <div class="stat-card pendentes">
+        <div class="stat-value">{{ stats.pendentes }}</div>
+        <div class="stat-label">Pendentes</div>
+    </div>
+    <div class="stat-card em_andamento">
+        <div class="stat-value">{{ stats.em_andamento }}</div>
+        <div class="stat-label">Em Andamento</div>
+    </div>
+    <div class="stat-card concluidas">
+        <div class="stat-value">{{ stats.concluidas }}</div>
+        <div class="stat-label">Concluídas</div>
+    </div>
+    <div class="stat-card vencidas">
+        <div class="stat-value">{{ stats.vencidas }}</div>
+        <div class="stat-label">Vencidas</div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="filtros-container">
+    <h5>Filtrar Tarefas</h5>
+    <form method="get" class="row g-3 align-items-center">
+        <div class="col-lg-8 col-md-7">
+            <div class="checkbox-group-filtros">
+                <div class="checkbox-item-filtro form-check">
+                    <input class="form-check-input" type="checkbox" name="status_filtro" 
+                           value="pendente" id="status_pendente"
+                           {% if 'pendente' in status_filtro %}checked{% endif %}>
+                    <label class="form-check-label" for="status_pendente">
+                        Pendentes
+                    </label>
+                </div>
+                <div class="checkbox-item-filtro form-check">
+                    <input class="form-check-input" type="checkbox" name="status_filtro" 
+                           value="em_andamento" id="status_em_andamento"
+                           {% if 'em_andamento' in status_filtro %}checked{% endif %}>
+                    <label class="form-check-label" for="status_em_andamento">
+                        Em Andamento
+                    </label>
+                </div>
+                <div class="checkbox-item-filtro form-check">
+                    <input class="form-check-input" type="checkbox" name="status_filtro" 
+                           value="concluida" id="status_concluida"
+                           {% if 'concluida' in status_filtro %}checked{% endif %}>
+                    <label class="form-check-label" for="status_concluida">
+                        Concluídas
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-5">
+            <button type="submit" class="btn btn-primary w-100 btn-sm">
+                <i class="fas fa-filter"></i> Aplicar Filtros
+            </button>
+            <a href="{% url 'crm:tarefas_list' %}" class="btn btn-outline-secondary w-100 mt-2 btn-sm">
+                <i class="fas fa-times"></i> Limpar Filtros
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Kanban Board -->
+<div class="kanban-container">
+    <div class="kanban-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h3 class="kanban-title">Kanban de Tarefas</h3>
+            <a href="{% url 'crm:tarefa_criar' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Nova Tarefa
+            </a>
+        </div>
+    </div>
+    
+    <div class="status-container">
+        <!-- Coluna: Pendentes -->
+        <div class="status-column status-pendente" 
+             data-status="pendente">
+            <div class="status-header">
+                <div class="d-flex align-items-center">
+                    <div class="status-title">
+                        <i class="fas fa-clock"></i>
+                        <span>Pendentes</span>
+                    </div>
+                    <div class="status-count">{{ tarefas_pendentes|length }}</div>
+                </div>
+            </div>
+            
+            <div class="tarefas-container">
+                {% for tarefa in tarefas_pendentes %}
+                    {% include 'crm/tarefas/partials/tarefa_card.html' with tarefa=tarefa %}
+                {% endfor %}
+                
+                {% if tarefas_pendentes|length == 0 %}
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>Nenhuma tarefa pendente</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Coluna: Em Andamento -->
+        <div class="status-column status-em_andamento" 
+             data-status="em_andamento">
+            <div class="status-header">
+                <div class="d-flex align-items-center">
+                    <div class="status-title">
+                        <i class="fas fa-spinner"></i>
+                        <span>Em Andamento</span>
+                    </div>
+                    <div class="status-count">{{ tarefas_em_andamento|length }}</div>
+                </div>
+            </div>
+            
+            <div class="tarefas-container">
+                {% for tarefa in tarefas_em_andamento %}
+                    {% include 'crm/tarefas/partials/tarefa_card.html' with tarefa=tarefa %}
+                {% endfor %}
+                
+                {% if tarefas_em_andamento|length == 0 %}
+                <div class="empty-state">
+                    <i class="fas fa-cogs"></i>
+                    <p>Nenhuma tarefa em andamento</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Coluna: Concluídas -->
+        <div class="status-column status-concluida" 
+             data-status="concluida">
+            <div class="status-header">
+                <div class="d-flex align-items-center">
+                    <div class="status-title">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Concluídas</span>
+                    </div>
+                    <div class="status-count">{{ tarefas_concluidas|length }}</div>
+                </div>
+            </div>
+            
+            <div class="tarefas-container">
+                {% for tarefa in tarefas_concluidas %}
+                    {% include 'crm/tarefas/partials/tarefa_card.html' with tarefa=tarefa %}
+                {% endfor %}
+                
+                {% if tarefas_concluidas|length == 0 %}
+                <div class="empty-state">
+                    <i class="fas fa-trophy"></i>
+                    <p>Nenhuma tarefa concluída</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Menu de Contexto para Tarefas -->
+<div id="contextMenuTarefa" class="context-menu">
+    <div class="context-menu-item text-primary" data-action="editar">
+        <i class="fas fa-edit"></i>
+        <span>Editar Tarefa</span>
+    </div>
+    
+    <div class="context-menu-item text-success" data-action="concluir">
+        <i class="fas fa-check"></i>
+        <span>Marcar como Concluída</span>
+    </div>
+    
+    <div class="context-menu-divider"></div>
+    
+    <div class="context-menu-item text-danger" data-action="cancelar">
+        <i class="fas fa-times"></i>
+        <span>Cancelar Tarefa</span>
+    </div>
+    
+    <div class="context-menu-item text-warning" data-action="duplicar">
+        <i class="fas fa-copy"></i>
+        <span>Duplicar Tarefa</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+// ==================== GERENCIADOR DE DRAG & DROP PARA TAREFAS ====================
+class TarefaDragManager {
+    constructor() {
+        this.dragStartX = 0;
+        this.currentCard = null;
+        this.isDragging = false;
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        document.addEventListener('dragstart', this.handleDragStart.bind(this));
+        document.addEventListener('dragover', this.handleDragOver.bind(this));
+        document.addEventListener('dragend', this.handleDragEnd.bind(this));
+        document.addEventListener('drop', this.handleDrop.bind(this));
+    }
+
+    handleDragStart(e) {
+        if (e.button === 2 || !e.target.classList.contains('tarefa-card')) return;
+        
+        this.currentCard = e.target;
+        this.dragStartX = e.clientX;
+        this.isDragging = true;
+        
+        this.currentCard.classList.add('dragging');
+        setTimeout(() => this.currentCard.style.opacity = '0.7', 0);
+        
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.currentCard.dataset.tarefaId);
+    }
+
+    handleDragOver(e) {
+        e.preventDefault();
+        const column = e.target.closest('.status-column');
+        if (column) {
+            document.querySelectorAll('.status-column').forEach(col => col.classList.remove('drag-over-tarefa'));
+            column.classList.add('drag-over-tarefa');
+        }
+    }
+
+    handleDragEnd() {
+        this.isDragging = false;
+        document.querySelectorAll('.status-column').forEach(col => {
+            col.classList.remove('drag-over-tarefa', 'drop-ready-tarefa');
+        });
+        
+        if (this.currentCard) {
+            this.currentCard.classList.remove('dragging');
+            this.currentCard.style.opacity = '1';
+            this.currentCard = null;
+        }
+    }
+
+    async handleDrop(e) {
+        e.preventDefault();
+        const column = e.target.closest('.status-column');
+        if (!column) return;
+
+        this.isDragging = false;
+        column.classList.remove('drag-over-tarefa');
+        column.classList.add('drop-ready-tarefa');
+
+        const tarefaId = e.dataTransfer.getData('text/plain');
+        const novoStatus = column.dataset.status;
+
+        try {
+            const response = await fetch("{% url 'crm:mover_tarefa' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'HX-Request': 'true'
+                },
+                body: JSON.stringify({ tarefa_id: tarefaId, novo_status: novoStatus })
+            });
+
+            if (response.ok) {
+                const cardHtml = await response.text();
+                const originalCard = document.querySelector(`[data-tarefa-id="${tarefaId}"]`);
+                
+                if (originalCard) {
+                    originalCard.style.opacity = '0';
+                    setTimeout(() => originalCard.remove(), 300);
+                }
+                
+                const tarefasContainer = column.querySelector('.tarefas-container');
+                const emptyState = tarefasContainer.querySelector('.empty-state');
+                if (emptyState) emptyState.remove();
+                
+                tarefasContainer.insertAdjacentHTML('beforeend', cardHtml);
+                const newCard = tarefasContainer.lastElementChild;
+                newCard.style.opacity = '0';
+                newCard.style.transform = 'scale(0.8)';
+                
+                setTimeout(() => {
+                    newCard.style.transition = 'all 0.3s ease';
+                    newCard.style.opacity = '1';
+                    newCard.style.transform = 'scale(1)';
+                }, 10);
+                
+                this.showNotification(`✅ Tarefa movida para ${novoStatus}`, 'success');
+                
+                // Atualizar contadores
+                this.updateCounters();
+            } else {
+                const data = await response.json();
+                this.showNotification('❌ Erro ao mover tarefa: ' + data.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('❌ Erro ao mover tarefa', 'error');
+        } finally {
+            setTimeout(() => column.classList.remove('drop-ready-tarefa'), 1000);
+        }
+    }
+
+    updateCounters() {
+        // Atualizar contadores de todas as colunas
+        document.querySelectorAll('.status-column').forEach(column => {
+            const status = column.dataset.status;
+            const container = column.querySelector('.tarefas-container');
+            const count = container.querySelectorAll('.tarefa-card').length;
+            const counterElement = column.querySelector('.status-count');
+            
+            if (counterElement) {
+                counterElement.textContent = count;
+            }
+            
+            // Atualizar empty state
+            const emptyState = container.querySelector('.empty-state');
+            if (count === 0 && !emptyState) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>Nenhuma tarefa ${status}</p>
+                    </div>
+                `;
+            } else if (count > 0 && emptyState) {
+                emptyState.remove();
+            }
+        });
+    }
+
+    showNotification(message, type) {
+        document.querySelectorAll('.alert.position-fixed').forEach(alert => alert.remove());
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+}
+
+// ==================== INICIALIZAÇÃO ====================
+document.addEventListener('DOMContentLoaded', function() {
+    window.tarefaDragManager = new TarefaDragManager();
+    
+    // Configurar menu de contexto para tarefas
+    setupTarefaContextMenu();
+});
+
+function setupTarefaContextMenu() {
+    const contextMenu = document.getElementById('contextMenuTarefa');
+    let currentTarefa = null;
+
+    // Mostrar menu ao clicar com botão direito
+    document.addEventListener('contextmenu', function(e) {
+        const card = e.target.closest('.tarefa-card');
+        if (!card) return;
+        
+        e.preventDefault();
+        currentTarefa = card;
+        
+        // Posicionar menu
+        const menuRect = contextMenu.getBoundingClientRect();
+        const viewport = { width: window.innerWidth, height: window.innerHeight };
+        
+        let x = e.clientX;
+        let y = e.clientY;
+        
+        if (x + menuRect.width > viewport.width) x = viewport.width - menuRect.width - 10;
+        if (y + menuRect.height > viewport.height) y = viewport.height - menuRect.height - 10;
+        
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
+        contextMenu.style.display = 'block';
+    });
+
+    // Esconder menu ao clicar fora
+    document.addEventListener('click', function(e) {
+        if (!contextMenu.contains(e.target)) {
+            contextMenu.style.display = 'none';
+        }
+    });
+
+    // Ações do menu
+    contextMenu.addEventListener('click', function(e) {
+        const menuItem = e.target.closest('.context-menu-item');
+        if (!menuItem || !currentTarefa) return;
+        
+        const action = menuItem.dataset.action;
+        const tarefaId = currentTarefa.dataset.tarefaId;
+        
+        switch(action) {
+            case 'editar':
+                window.location.href = `/crm/tarefas/${tarefaId}/editar/`;
+                break;
+            case 'concluir':
+                concluirTarefa(tarefaId);
+                break;
+            case 'cancelar':
+                cancelarTarefa(tarefaId);
+                break;
+            case 'duplicar':
+                duplicarTarefa(tarefaId);
+                break;
+        }
+        
+        contextMenu.style.display = 'none';
+    });
+}
+
+function concluirTarefa(tarefaId) {
+    fetch(`/crm/tarefas/${tarefaId}/concluir/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    }).then(response => {
+        if (response.ok) {
+            window.location.reload();
+        }
+    });
+}
+
+function getCookie(name) {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [cookieName, cookieValue] = cookie.trim().split('=');
+        if (cookieName === name) return decodeURIComponent(cookieValue);
+    }
+    return null;
+}
+</script>
+{% endblock %}

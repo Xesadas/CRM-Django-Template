@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        /* Estilo inline para garantir que a logo apareça corretamente */
+        .logo {
+            max-width: 250px !important;
+            width: 100% !important;
+            height: auto !important;
+            object-fit: contain !important;
+            display: block !important;
+            margin: 0 auto -20px auto !important;
+        }
+        
+        /* Forçar cores do gradiente - MUDE AQUI AS CORES */
+        .toggle {
+            background: linear-gradient(to right, #111111, #000000) !important;
+        }
+        
+        .container button {
+            background-color: #2ca1db !important;
+        }
+        
+        @media only screen and (min-width: 320px) and (max-width: 767px) {
+            .logo {
+                max-width: 120px !important;
+                margin: 0 auto 15px auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="container">
+        <!-- Formulário de Cadastro -->
+        <div class="form-container sign-up">
+            <form method="post" action="{% url 'cadastro' %}"> 
+                {% csrf_token %}
+                <h1>Criar Conta</h1>
+                <div class="social-icons">
+                    <!-- Seus ícones sociais -->
+                </div>
+                <span>ou use seu email para cadastro</span>
+                <input type="text" name="username" placeholder="Nome" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password1" placeholder="Senha" required>
+                <input type="password" name="password2" placeholder="Confirmar Senha" required>
+                <button type="submit">Cadastrar</button>
+            </form>
+        </div>
+
+        <!-- Formulário de Login -->
+        <div class="form-container sign-in">
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <img src="{% static 'images/crm_template.jpg' %}" alt="CRM Template" class="logo">
+                <div class="social-icons">
+                    <!-- Seus ícones sociais -->
+                </div>
+                <input type="text" name="username" placeholder="Usuário" required>
+                <input type="password" name="password" placeholder="Senha" required>
+                <a href="#">Esqueceu sua senha?</a>
+                <button type="submit">Entrar</button>
+            </form>
+        </div>
+
+        <!-- Painel de Alternância -->
+        <div class="toggle-container">
+            <div class="toggle">
+                <div class="toggle-panel toggle-left">
+                    <h1>Bem-vindo de volta!</h1>
+                    <p>Entre com seus dados para acessar o sistema</p>
+                    <button class="hidden" id="login">Entrar</button>
+                </div>
+                <div class="toggle-panel toggle-right">
+                    <h1>Olá!</h1>
+                    <p>Cadastre-se para acessar todos os recursos</p>
+                    <button class="hidden" id="register">Cadastrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

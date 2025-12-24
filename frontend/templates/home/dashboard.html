@@ -1,0 +1,535 @@
+{% extends 'crm/base_crm.html' %}
+{% load static %}
+{% load crm_extras %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.metric-card.primary { border-left-color: #007bff; }
+.metric-card.success { border-left-color: #28a745; }
+.metric-card.warning { border-left-color: #ffc107; }
+.metric-card.danger { border-left-color: #dc3545; }
+.metric-card.info { border-left-color: #17a2b8; }
+
+.metric-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 8px 0;
+    color: #2c3e50;
+}
+
+.metric-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.metric-change {
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 20px 0;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #2c3e50;
+}
+
+.quick-action-btn:hover {
+    border-color: #007bff;
+    background: #f8f9fa;
+    transform: translateY(-2px);
+    color: #007bff;
+}
+
+.quick-action-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    background: #007bff;
+    color: white;
+}
+
+.activity-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.activity-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.activity-item::before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #007bff;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px #007bff;
+}
+
+.activity-item::after {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 20px;
+    width: 2px;
+    height: calc(100% - 10px);
+    background: #e9ecef;
+}
+
+.activity-item:last-child::after {
+    display: none;
+}
+
+.task-item {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 3px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.task-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.task-item.priority-urgente { border-left-color: #dc3545; }
+.task-item.priority-alta { border-left-color: #ffc107; }
+.task-item.priority-media { border-left-color: #17a2b8; }
+.task-item.priority-baixa { border-left-color: #6c757d; }
+
+.task-overdue {
+    background: #fff5f5;
+}
+
+.goal-progress {
+    height: 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.goal-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+.client-alert {
+    background: white;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-left: 3px solid #dc3545;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+@media (max-width: 768px) {
+    .metric-value {
+        font-size: 1.5rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block crm_content %}
+<div class="container-fluid p-4">
+    <!-- Header com Saudação -->
+    <div class="mb-4">
+        <h2 class="mb-1">Olá, {{ user.get_full_name|default:user.username }}! 👋</h2>
+        <p class="text-muted">Aqui está um resumo do seu CRM hoje.</p>
+    </div>
+
+    <!-- Métricas Principais -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="metric-card primary">
+                <div class="metric-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="metric-value">{{ total_clientes }}</div>
+                <div class="metric-label">Total de Clientes</div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="metric-card success">
+                <div class="metric-icon bg-success bg-opacity-10 text-success">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="metric-value">R$ {{ valor_pipeline|floatformat:0 }}</div>
+                <div class="metric-label">Valor em Pipeline</div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="metric-card warning">
+                <div class="metric-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="metric-value">{{ total_tarefas_pendentes }}</div>
+                <div class="metric-label">Tarefas Pendentes</div>
+                {% if tarefas_vencidas > 0 %}
+                <div class="metric-change text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> {{ tarefas_vencidas }} vencidas
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="metric-card info">
+                <div class="metric-icon bg-info bg-opacity-10 text-info">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="metric-value">{{ conversoes_mes }}</div>
+                <div class="metric-label">Conversões Este Mês</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="fas fa-bolt text-warning"></i> Ações Rápidas
+            </h5>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <a href="{% url 'crm:cadastro_cliente' %}" class="quick-action-btn">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">Novo Cliente</div>
+                            <small class="text-muted">Cadastrar</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{% url 'crm:tarefa_criar' %}" class="quick-action-btn">
+                        <div class="quick-action-icon bg-success">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">Nova Tarefa</div>
+                            <small class="text-muted">Adicionar</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{% url 'crm:funil_vendas' %}" class="quick-action-btn">
+                        <div class="quick-action-icon bg-warning">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">Ver Funis</div>
+                            <small class="text-muted">Pipeline</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{% url 'crm:relatorios' %}" class="quick-action-btn">
+                        <div class="quick-action-icon bg-info">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">Relatórios</div>
+                            <small class="text-muted">Análises</small>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Coluna Esquerda -->
+        <div class="col-12 col-lg-8">
+            <!-- Tarefas de Hoje -->
+            <div class="card mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="section-header">
+                        <h5 class="section-title mb-0">
+                            <i class="fas fa-calendar-check text-primary"></i> 
+                            Tarefas de Hoje
+                        </h5>
+                        <a href="{% url 'crm:tarefas_list' %}" class="btn btn-sm btn-outline-primary">
+                            Ver Todas
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if tarefas_hoje %}
+                        {% for tarefa in tarefas_hoje %}
+                        <div class="task-item priority-{{ tarefa.prioridade }} {% if tarefa.esta_vencida %}task-overdue{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge bg-{{ tarefa.prioridade }}">
+                                            {{ tarefa.get_prioridade_display }}
+                                        </span>
+                                        <span class="badge bg-secondary">
+                                            {{ tarefa.get_tipo_display }}
+                                        </span>
+                                    </div>
+                                    <h6 class="mb-1">{{ tarefa.titulo }}</h6>
+                                    {% if tarefa.cliente %}
+                                    <small class="text-muted">
+                                        <i class="fas fa-user"></i> {{ tarefa.cliente.nome }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted d-block mb-2">
+                                        <i class="fas fa-clock"></i>
+                                        {{ tarefa.data_vencimento|date:"H:i" }}
+                                    </small>
+                                    <form method="post" action="{% url 'crm:tarefa_concluir' tarefa.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-check-circle fa-3x mb-3"></i>
+                            <p>Nenhuma tarefa para hoje! 🎉</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Distribuição de Clientes por Etapa -->
+            <div class="card mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="section-title">
+                        <i class="fas fa-chart-pie text-success"></i>
+                        Clientes por Etapa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="clientesEtapaChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertas e Clientes Atrasados -->
+            {% if clientes_atrasados %}
+            <div class="card mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="section-title">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                        Atenção Necessária
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for cliente in clientes_atrasados %}
+                    <div class="client-alert">
+                        <div>
+                            <i class="fas fa-exclamation-circle text-danger fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>{{ cliente.nome }}</strong>
+                            <div class="small text-muted">
+                                Atrasado {{ cliente.horas_atraso|floatformat:0 }}h na etapa {{ cliente.etapa }}
+                            </div>
+                        </div>
+                        <a href="{% url 'crm:cliente_detalhes' cliente.id %}" class="btn btn-sm btn-outline-primary">
+                            Ver Detalhes
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Coluna Direita -->
+        <div class="col-12 col-lg-4">
+            <!-- Metas -->
+            {% if metas_ativas %}
+            <div class="card mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="section-title">
+                        <i class="fas fa-bullseye text-warning"></i>
+                        Metas Ativas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for meta in metas_ativas %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong>{{ meta.nome }}</strong>
+                            <span class="badge bg-primary">{{ meta.get_periodo_display }}</span>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-progress-bar" style="width: {{ meta.percentual_atingido }}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>R$ {{ meta.valor_atual|floatformat:2 }}</span>
+                            <span>R$ {{ meta.valor_alvo|floatformat:2 }}</span>
+                        </div>
+                        <div class="text-center small fw-bold mt-1">
+                            {{ meta.percentual_atingido|floatformat:1 }}% atingido
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Atividades Recentes -->
+            <div class="card">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="section-title">
+                        <i class="fas fa-history text-info"></i>
+                        Atividades Recentes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="activity-timeline">
+                        {% for atividade in atividades_recentes %}
+                        <div class="activity-item">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">{{ atividade.titulo }}</div>
+                                    <div class="small text-muted mb-1">
+                                        <i class="fas fa-user"></i> {{ atividade.cliente.nome }}
+                                    </div>
+                                    <div class="small text-muted">
+                                        <i class="fas fa-clock"></i>
+                                        {{ atividade.data_atividade|timesince }} atrás
+                                    </div>
+                                </div>
+                                <span class="badge bg-{{ atividade.tipo }}">
+                                    {{ atividade.get_tipo_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p class="mb-0">Nenhuma atividade recente</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de Clientes por Etapa
+    const ctxEtapa = document.getElementById('clientesEtapaChart');
+    if (ctxEtapa) {
+        const etapasData = {{ clientes_por_etapa|safe }};
+        const labels = Object.keys(etapasData);
+        const data = Object.values(etapasData);
+        
+        new Chart(ctxEtapa, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        '#007bff', '#28a745', '#ffc107', '#dc3545',
+                        '#17a2b8', '#6c757d', '#fd7e14', '#20c997'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

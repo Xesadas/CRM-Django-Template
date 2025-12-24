@@ -1,0 +1,55 @@
+<div class="cliente-card" 
+     data-cliente-id="{{ cliente.id }}"
+     data-funil-original="{{ cliente.funil.id }}"
+     data-url-editar="{% url 'crm:editar_cliente' cliente.id %}"
+     data-ultima-etapa="{% if cliente.etapa == funil.etapas|last %}true{% else %}false{% endif %}"
+     draggable="true">
+    
+    <div class="card-header">
+        <strong>{{ cliente.nome }}</strong>
+    </div>
+    
+    <div class="card-body">
+        {% if cliente.telefone %}
+        <div class="card-row">
+            <i class="fas fa-phone"></i> {{ cliente.telefone }}
+        </div>
+        {% endif %}
+        
+        {% if cliente.email %}
+        <div class="card-row">
+            <i class="fas fa-envelope"></i> {{ cliente.email }}
+        </div>
+        {% endif %}
+        
+        {% if cliente.empresa %}
+        <div class="card-row">
+            <i class="fas fa-building"></i> {{ cliente.empresa }}
+        </div>
+        {% endif %}
+        
+        <div class="card-row">
+            <i class="fas fa-money-bill-wave"></i> R$ {{ cliente.valor_estimado|floatformat:2 }}
+        </div>
+        
+        {% if cliente.observacoes %}
+        <div class="card-row">
+            <i class="fas fa-sticky-note"></i> 
+            <span class="text-muted">{{ cliente.observacoes|truncatechars:50 }}</span>
+        </div>
+        {% endif %}
+        
+        <!-- Alertas de Prazo -->
+        {% if cliente.esta_atrasado %}
+        <div class="card-alert">
+            <i class="fas fa-exclamation-triangle"></i> 
+            Atrasado: {{ cliente.horas_atraso|floatformat:1 }}h
+        </div>
+        {% endif %}
+        
+        <div class="card-time">
+            <i class="fas fa-hourglass-half"></i> 
+            {{ cliente.horas_na_etapa|floatformat:1 }}h nesta etapa
+        </div>
+    </div>
+</div>

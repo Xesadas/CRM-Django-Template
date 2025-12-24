@@ -1,0 +1,449 @@
+{% extends 'crm/base_crm.html' %}
+
+{% block crm_content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-edit"></i>
+                    Editar Cliente: {{ cliente.nome }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong><i class="fas fa-info-circle"></i> Informação:</strong> 
+                    Atualize os dados do cliente abaixo. Campos marcados com * são obrigatórios.
+                </div>
+
+                <!-- Informações do Funil Atual -->
+                <div class="card mb-4 border-info">
+                    <div class="card-header bg-info text-white py-2">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chart-line"></i>
+                            Informações do Funil
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Funil Atual:</strong> {{ cliente.funil.nome }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Etapa Atual:</strong> 
+                                <span class="badge bg-secondary">{{ cliente.etapa }}</span>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <strong>Tempo na Etapa:</strong> 
+                                {{ cliente.horas_na_etapa|floatformat:1 }} horas
+                                {% if cliente.esta_atrasado %}
+                                <span class="badge bg-danger ms-2">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Atrasado: {{ cliente.horas_atraso|floatformat:1 }}h
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" id="formEditarCliente">
+                    {% csrf_token %}
+                    
+                    <!-- Dados Básicos -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user"></i>
+                                Dados Básicos do Cliente
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="nome" class="form-label">Nome do Cliente *</label>
+                                    <input type="text" class="form-control" id="nome" name="nome" 
+                                           value="{{ cliente.nome }}" required maxlength="200">
+                                    <div class="form-text">Nome completo ou razão social</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="telefone" class="form-label">Telefone</label>
+                                    <input type="text" class="form-control" id="telefone" name="telefone" 
+                                           value="{{ cliente.telefone|default:'' }}" 
+                                           placeholder="(00) 00000-0000">
+                                    <div class="form-text">Telefone para contato</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="empresa" class="form-label">Empresa</label>
+                                    <input type="text" class="form-control" id="empresa" name="empresa" 
+                                           value="{{ cliente.empresa|default:'' }}" maxlength="200">
+                                    <div class="form-text">Nome da empresa (se aplicável)</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="ramo_atividade" class="form-label">Ramo de Atividade</label>
+                                    <input type="text" class="form-control" id="ramo_atividade" name="ramo_atividade" 
+                                           value="{{ cliente.ramo_atividade|default:'' }}" 
+                                           placeholder="Ex: Comércio, Serviços..." maxlength="200">
+                                    <div class="form-text">Segmento de atuação do cliente</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações Comerciais -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-line"></i>
+                                Informações Comerciais
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="tpv_medio" class="form-label">TPV Médio (R$)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" step="0.01" min="0" class="form-control" 
+                                               id="tpv_medio" name="tpv_medio" 
+                                               value="{{ cliente.tpv_medio|default:0 }}">
+                                    </div>
+                                    <div class="form-text">Ticket médio mensal estimado</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="funil_id" class="form-label">Funil *</label>
+                                    <select class="form-select" id="funil_id" name="funil_id" required>
+                                        <option value="">Selecione um funil</option>
+                                        {% for funil in funis %}
+                                        <option value="{{ funil.id }}" 
+                                                {% if cliente.funil.id == funil.id %}selected{% endif %}>
+                                            {{ funil.nome }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Funil de vendas do cliente</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="etapa" class="form-label">Etapa Atual *</label>
+                                    <select class="form-select" id="etapa" name="etapa" required>
+                                        <option value="">Selecione uma etapa</option>
+                                        {% for etapa in etapas_funil %}
+                                        <option value="{{ etapa }}" 
+                                                {% if cliente.etapa == etapa %}selected{% endif %}>
+                                            {{ etapa }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Etapa atual no funil de vendas</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="data_entrada_etapa" class="form-label">Data de Entrada na Etapa</label>
+                                    <input type="datetime-local" class="form-control" id="data_entrada_etapa" 
+                                           name="data_entrada_etapa" 
+                                           value="{{ cliente.data_entrada_etapa|date:'Y-m-d\TH:i' }}">
+                                    <div class="form-text">Data em que o cliente entrou nesta etapa</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observações e Informações Adicionais -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="fas fa-sticky-note"></i>
+                                Observações e Informações Adicionais
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="obs_livre" class="form-label">Observações</label>
+                                <textarea class="form-control" id="obs_livre" name="obs_livre" 
+                                          rows="4" placeholder="Anotações adicionais sobre o cliente, histórico de contato, informações relevantes...">{{ cliente.obs_livre|default:'' }}</textarea>
+                                <div class="form-text">
+                                    <i class="fas fa-lightbulb"></i> 
+                                    Use este espaço para registrar informações importantes sobre o cliente
+                                </div>
+                            </div>
+                            
+                            <!-- Informações do Sistema (somente leitura) -->
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>Criado em:</strong> 
+                                        {{ cliente.criado_em|date:"d/m/Y H:i"|default:"N/A" }}
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>Última atualização:</strong> 
+                                        {{ cliente.atualizado_em|date:"d/m/Y H:i"|default:"N/A" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ações -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{% url 'crm:funil_vendas' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar para o Funil
+                            </a>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalExcluir">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="modalExcluir" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+                </div>
+                <p>Tem certeza que deseja excluir o cliente <strong>"{{ cliente.nome }}"</strong>?</p>
+                <p class="text-muted">O cliente será removido permanentemente do sistema.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <a href="{% url 'crm:excluir_cliente' cliente.id %}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Confirmar Exclusão
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Dados do Django injetados em variável global -->
+<script id="django-data" type="application/json">
+{{ funis_json }}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // -----------------------------
+    // Mapeamento Funil → Etapas
+    // -----------------------------
+    const funisEtapas = JSON.parse(document.getElementById('django-data').textContent);
+
+    const funilSelect = document.getElementById('funil_id');
+    const etapaSelect = document.getElementById('etapa');
+
+    funilSelect.addEventListener('change', function () {
+        const funilId = parseInt(this.value);
+        const etapas = funisEtapas[funilId] || [];
+
+        etapaSelect.innerHTML = '<option value="">Selecione uma etapa</option>';
+
+        etapas.forEach(function(etapa) {
+            const opt = document.createElement('option');
+            opt.value = etapa;
+            opt.textContent = etapa;
+            etapaSelect.appendChild(opt);
+        });
+    });
+
+    // -----------------------------
+    // Formatação de telefone
+    // -----------------------------
+    const telefoneInput = document.getElementById('telefone');
+    telefoneInput.addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+
+        if (value.length <= 11) {
+            if (value.length <= 6) {
+                value = value.replace(/(\d{0,2})(\d{0,4})/, '($1) $2');
+            } else if (value.length <= 10) {
+                value = value.replace(/(\d{0,2})(\d{0,4})(\d{0,4})/, '($1) $2-$3');
+            } else {
+                value = value.replace(/(\d{0,2})(\d{0,5})(\d{0,4})/, '($1) $2-$3');
+            }
+        }
+
+        e.target.value = value;
+    });
+
+    // -----------------------------
+    // Validação do formulário
+    // -----------------------------
+    const form = document.getElementById('formEditarCliente');
+
+    form.addEventListener('submit', function (e) {
+        const nome = document.getElementById('nome').value.trim();
+        const funil = document.getElementById('funil_id').value;
+        const etapa = document.getElementById('etapa').value;
+
+        if (!nome || !funil || !etapa) {
+            e.preventDefault();
+            showAlert('Por favor, preencha todos os campos obrigatórios.', 'warning');
+            return;
+        }
+    });
+
+    // -----------------------------
+    // Exibir alerta
+    // -----------------------------
+    function showAlert(message, type) {
+        document.querySelectorAll('.alert-dismissible.position-fixed').forEach(function(a) { 
+            a.remove(); 
+        });
+
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show position-fixed';
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        document.body.appendChild(alertDiv);
+
+        setTimeout(function() {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // -----------------------------
+    // Evitar envio duplo
+    // -----------------------------
+    let formSubmitted = false;
+    form.addEventListener('submit', function (e) {
+        if (formSubmitted) {
+            e.preventDefault();
+            return;
+        }
+
+        formSubmitted = true;
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    });
+
+});
+</script>
+{% endblock %}
+
+<style>
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+    border: none;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    padding: 10px 12px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+}
+
+.input-group-text {
+    border-radius: 8px 0 0 8px;
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+.badge {
+    font-size: 0.75em;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .col-md-8.offset-md-2 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    .btn-group {
+        width: 100%;
+        margin-top: 15px;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    animation: fadeIn 0.4s ease-in;
+}
+</style>

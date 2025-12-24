@@ -1,0 +1,374 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema CRM{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/icon.png' %}">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <!-- CSS global -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    {% block extra_css %}{% endblock %}
+
+    <style>
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --bg-sidebar: linear-gradient(135deg, #000000 0%, #000000 100%);
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --card-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --navbar-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-sidebar: linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #444444;
+            --card-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            --navbar-bg: #1a1a1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar {
+            background: var(--bg-sidebar);
+            min-height: 100vh;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 230px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        #sidebar.collapsed {
+            margin-left: -230px;
+        }
+
+        .sidebar .logo-text {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px auto;
+            display: block;
+            text-decoration: none;
+        }
+
+        .nav-link {
+            color: white !important;
+            padding: 12px 16px;
+            margin: 4px 0;
+            border-radius: 0 25px 25px 0;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #00d4ff;
+            transform: translateX(5px);
+        }
+
+        .main-content {
+            margin-left: 230px;
+            padding: 0;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            width: calc(100% - 230px);
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .navbar-light {
+            background-color: #000 !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+        .navbar-light .navbar-brand {
+            color: #fff !important;
+        }
+        .navbar-light span,
+        .navbar-light i {
+            color: #fff !important;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-top: auto;
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            left: 10px;
+            top: 70px;
+            z-index: 1001;
+            background: #000000;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .sidebar-toggle:hover {
+            background: #000000;
+            transform: scale(1.1);
+        }
+
+        .content-wrapper {
+            width: 100%;
+            height: 100%;
+        }
+
+        .container-fluid {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .content-wrapper {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 2px solid var(--text-secondary);
+            color: var(--text-primary);
+            border-radius: 20px;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--text-secondary);
+            color: var(--bg-primary);
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .table {
+            color: var(--text-primary);
+        }
+
+        .form-control, .form-select {
+            background-color: var(--bg-secondary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--bg-secondary);
+            border-color: #007bff;
+            color: var(--text-primary);
+        }
+
+        .alert {
+            background-color: var(--bg-secondary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .alert-container {
+            padding: 0 20px;
+        }
+    </style>
+</head>
+<body data-theme="light">
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo-text" style="font-size:1.6rem;">CRM SYSTEM</div>
+        <nav class="nav flex-column mt-3">
+
+            <a class="nav-link {% if 'home' in request.path %}active{% endif %}" href="{% url 'home:index' %}"> 
+                <i class="fas fa-home"></i> Início
+            </a>
+
+            <a class="nav-link {% if 'crm' in request.path %}active{% endif %}" href="{% url 'crm:funil_vendas' %}">
+                <i class="fas fa-users"></i> CRM
+            </a>
+
+            <a class="nav-link {% if 'calendario' in request.path %}active{% endif %}" href="{% url 'calendario:calendario' %}">
+                <i class="fas fa-calendar-alt"></i> Calendário
+            </a>
+
+            <a class="nav-link {% if request.resolver_match.url_name == 'configuracoes' %}active{% endif %}" href="{% url 'configuracoes' %}">
+                <i class="fas fa-cog"></i> Configurações
+            </a>
+
+        </nav>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div class="main-content" id="mainContent">
+        <!-- Botão para toggle do menu lateral -->
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-chevron-right" id="sidebarIcon"></i>
+        </button>
+
+        <nav class="navbar navbar-light">
+            <div class="container-fluid" style="padding-left: 20px !important; padding-right: 20px !important;">
+                <span class="navbar-brand fw-bold">Sistema CRM</span>
+                <div class="d-flex align-items-center">
+                    <!-- Botão de Tema -->
+                    <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                    </button>
+                    
+                    <span class="me-3 text-muted">
+                        <i class="fas fa-user"></i> {{ user.username }}
+                    </span>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid flex-grow-1">
+            {% if messages %}
+                <div class="alert-container">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="content-wrapper">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle do menu lateral
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarIcon = document.getElementById('sidebarIcon');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+                
+                // Atualizar ícone
+                if (sidebar.classList.contains('collapsed')) {
+                    sidebarIcon.className = 'fas fa-chevron-right';
+                } else {
+                    sidebarIcon.className = 'fas fa-chevron-left';
+                }
+                
+                // Salvar estado no localStorage
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            });
+
+            // Verificar estado salvo do menu lateral
+            const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isSidebarCollapsed) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+                sidebarIcon.className = 'fas fa-chevron-right';
+            } else {
+                sidebarIcon.className = 'fas fa-chevron-left';
+            }
+
+            // Sistema de Tema
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const body = document.body;
+
+            // Carregar tema salvo ou usar preferência do sistema
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = savedTheme === 'system' ? (systemPrefersDark ? 'dark' : 'light') : savedTheme;
+            
+            setTheme(initialTheme);
+
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                setTheme(newTheme);
+            });
+
+            function setTheme(theme) {
+                body.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+
+                // Atualizar ícone
+                if (theme === 'dark') {
+                    themeIcon.className = 'fas fa-sun';
+                    themeToggle.title = 'Modo claro';
+                } else {
+                    themeIcon.className = 'fas fa-moon';
+                    themeToggle.title = 'Modo escuro';
+                }
+
+                // Disparar evento para outros componentes
+                window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
+            }
+
+            // Observar mudanças no tema do sistema
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (localStorage.getItem('theme') === 'system') {
+                    setTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

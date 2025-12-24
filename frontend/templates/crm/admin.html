@@ -1,0 +1,168 @@
+{% extends 'crm/base_crm.html' %}
+{% load crm_extras %}
+{% block crm_content %}
+<div class="row">
+    <div class="col-12">
+        {% if not user.is_superuser %}
+        <div class="alert alert-danger">
+            <strong>Acesso Negado!</strong> Apenas administradores podem acessar esta área.
+        </div>
+        {% else %}
+        
+        <!-- Configuração de Metas Globais -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Configuração de Metas Globais</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Configure as metas de conversão para o sistema CRM. Estas metas serão usadas para calcular indicadores e relatórios.
+                </p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="base_atendidos" class="form-label">Base de Clientes Atendidos</label>
+                            <input 
+                                type="number" 
+                                class="form-control" 
+                                id="base_atendidos" 
+                                name="base_atendidos" 
+                                value="{{ meta.base_atendidos }}"
+                                min="1"
+                                required
+                            >
+                            <small class="form-text text-muted">
+                                Quantidade de clientes atendidos para calcular metas
+                            </small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="meta_entregues" class="form-label">Meta de Clientes Entregues</label>
+                            <input 
+                                type="number" 
+                                class="form-control" 
+                                id="meta_entregues" 
+                                name="meta_entregues" 
+                                value="{{ meta.meta_entregues }}"
+                                min="1"
+                                required
+                            >
+                            <small class="form-text text-muted">
+                                Quantidade de clientes que devem ser entregues a cada base de atendidos
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>Meta Atual:</strong> Para cada <strong>{{ meta.base_atendidos }}</strong> clientes atendidos, 
+                        a meta é entregar <strong>{{ meta.meta_entregues }}</strong> cliente(s) ativo(s).
+                        <br>
+                        <strong>Taxa de Conversão:</strong> {{ meta.meta_entregues|floatformat:0 }} / {{ meta.base_atendidos }} = 
+                        {{ meta.meta_entregues|mul:100|div:meta.base_atendidos|floatformat:1 }}%
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Metas Globais
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Visão Geral do Sistema -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Visão Geral do Sistema</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-center border-primary">
+                            <div class="card-body">
+                                <h3 class="text-primary">{{ usuarios|length }}</h3>
+                                <p class="mb-0">Usuários Ativos</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card text-center border-info">
+                            <div class="card-body">
+                                <h3 class="text-info">{{ total_clientes_crm }}</h3>
+                                <p class="mb-0">Clientes em Funil</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card text-center border-success">
+                            <div class="card-body">
+                                <h3 class="text-success">{{ total_ativos }}</h3>
+                                <p class="mb-0">Clientes Ativos</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card text-center border-danger">
+                            <div class="card-body">
+                                <h3 class="text-danger">{{ total_perdidos }}</h3>
+                                <p class="mb-0">Clientes Perdidos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lista de Usuários -->
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Usuários do Sistema</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Clientes CRM</th>
+                                <th>Clientes Ativos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr>
+                                <td>{{ usuario.get_full_name|default:"-" }}</td>
+                                <td>{{ usuario.username }}</td>
+                                <td>{{ usuario.email }}</td>
+                                <td>
+                                    {% if usuario.is_superuser %}
+                                        <span class="badge bg-danger">Admin</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">Usuário</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ usuario.clientes_crm.all.count }}
+                                </td>
+                                <td>
+                                    {{ usuario.clientes_ativos.all.count }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+<div class="tarefa-card {% if tarefa.esta_vencida %}vencida{% endif %} 
+             prioridade-{{ tarefa.prioridade }}" 
+     data-tarefa-id="{{ tarefa.id }}"
+     draggable="true">
+    
+    <div class="card-header-tarefa">
+        {{ tarefa.titulo }}
+    </div>
+    
+    {% if tarefa.descricao %}
+    <div class="card-body-tarefa">
+        <p class="small text-muted mb-2">
+            {{ tarefa.descricao|truncatewords:20 }}
+        </p>
+    </div>
+    {% endif %}
+    
+    <div class="card-row-tarefa">
+        <small class="text-muted">
+            <i class="fas fa-tag"></i> {{ tarefa.get_tipo_display }}
+        </small>
+    </div>
+    
+    {% if tarefa.cliente %}
+    <div class="card-row-tarefa">
+        <small>
+            <i class="fas fa-user"></i> {{ tarefa.cliente.nome }}
+        </small>
+    </div>
+    {% endif %}
+    
+    <div class="card-row-tarefa">
+        <small>
+            <i class="fas fa-calendar"></i> 
+            {{ tarefa.data_vencimento|date:"d/m/Y H:i" }}
+        </small>
+    </div>
+    
+    {% if tarefa.esta_vencida %}
+    <div class="card-alert-tarefa">
+        <i class="fas fa-exclamation-triangle"></i>
+        Tarefa vencida
+    </div>
+    {% endif %}
+    
+    <div class="card-time-tarefa">
+        <small>
+            <i class="fas fa-hourglass-half"></i>
+            Prioridade: {{ tarefa.get_prioridade_display }}
+        </small>
+    </div>
+</div>

@@ -1,0 +1,181 @@
+/* ========================================
+   CRM Django - Estilos Personalizados
+   ======================================== */
+
+/* Cores principais */
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --success-color: #4CAF50;
+    --danger-color: #f44336;
+    --warning-color: #ff9800;
+    --info-color: #2196F3;
+    --light-bg: #f8f9fa;
+    --border-color: #e9ecef;
+}
+
+/* Menu CRM */
+.menu-crm {
+    background: var(--light-bg);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.menu-btn {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin: 0 8px 8px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #333;
+    display: inline-block;
+    font-weight: 500;
+}
+
+.menu-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.menu-btn.active {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Colunas do Funil */
+.etapa-column {
+    background: var(--light-bg);
+    border-radius: 12px;
+    padding: 15px;
+    min-height: 600px;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.etapa-column.drag-over {
+    background: #e3f2fd;
+    border-color: var(--info-color);
+    box-shadow: 0 6px 16px rgba(33, 150, 243, 0.3);
+    transform: scale(1.02);
+}
+
+.etapa-column::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 12px 12px 0 0;
+}
+
+/* Cabeçalho das Etapas */
+.etapa-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.etapa-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.etapa-prazo {
+    font-size: 0.9em;
+    opacity: 0.95;
+    font-weight: 500;
+}
+
+.etapa-taxa {
+    font-size: 0.85em;
+    opacity: 0.9;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+/* Cards de Clientes */
+.cliente-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 12px;
+    cursor: move;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.cliente-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.cliente-card:hover {
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    transform: translateY(-3px);
+    border-color: var(--primary-color);
+}
+
+.cliente-card:hover::before {
+    opacity: 1;
+}
+
+.cliente-card.dragging {
+    opacity: 0.6;
+    transform: rotate(3deg) scale(0.95);
+    cursor: grabbing;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+.card-header {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.card-body {
+    font-size: 0.95em;
+}
+
+.card-row {
+    margin: 6px 0;
+    color: #555;
+    line-height: 1.5;
+}
+
+.card-row strong {
+    color: #333;
+    font-weight: 600;
+}

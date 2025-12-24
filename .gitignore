@@ -1,0 +1,14 @@
+#Cache files
+*.pyc
+**/__pycache__/
+
+
+# Virtual environments
+venv/
+env/
+
+
+# Banco de dados SQLite
+**db.sqlite3
+staticfiles
+logs

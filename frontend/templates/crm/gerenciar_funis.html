@@ -1,0 +1,302 @@
+{% extends 'crm/base_crm.html' %}
+{% load static %}
+{% load crm_extras %}  {# ADICIONE ESTA LINHA #}
+
+{% block crm_content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Card para Criar Novo Funil -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Criar Novo Funil</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="criar">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nome" class="form-label">Nome do Funil*</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required 
+                                   placeholder="Ex: Funil Comercial Padrão">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="etapas" class="form-label">Etapas (uma por linha)*</label>
+                            <textarea class="form-control" id="etapas" name="etapas" rows="3" required 
+                                      placeholder="Ex: 
+                                                        Atendimento
+                                                        Proposta
+                                                        Contratação"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>Prazos por Etapa (em horas):</h6>
+                            <div id="prazos-container">
+                                <!-- Será preenchido via JavaScript com os campos de prazo para cada etapa -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Taxas de Conversão Esperadas (%):</h6>
+                            <div id="taxas-container">
+                                <!-- Será preenchido via JavaScript com os campos de taxa para cada etapa (exceto a última) -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success mt-3">
+                        <i class="fas fa-save"></i> Criar Funil
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Funis Existentes -->
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Meus Funis</h5>
+            </div>
+            <div class="card-body">
+                {% if funis %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Etapas</th>
+                                <th>Prazos</th>
+                                <th>Taxas</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for funil in funis %}
+                            <tr>
+                                <td>{{ funil.nome }}</td>
+                                <td>{{ funil.get_etapas_display }}</td>
+                                <td>
+                                    {% for etapa, prazo in funil.prazos.items %}
+                                        {{ etapa }}: {{ prazo }}h<br>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for etapa, taxa in funil.taxas_conversao.items %}
+                                        {{ etapa }}: {{ taxa }}%<br>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editFunilModal{{ funil.id }}">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteFunilModal{{ funil.id }}">
+                                            <i class="fas fa-trash"></i> Excluir
+                                        </button>
+                                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#shareFunilModal{{ funil.id }}">
+                                            <i class="fas fa-share-alt"></i> Compartilhar
+                                        </button>
+                                    </div>
+
+                                    <!-- Modal Editar -->
+                                    <div class="modal fade" id="editFunilModal{{ funil.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Editar Funil: {{ funil.nome }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <form method="post">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="editar">
+                                                    <input type="hidden" name="funil_id" value="{{ funil.id }}">
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label for="edit_nome{{ funil.id }}" class="form-label">Nome</label>
+                                                            <input type="text" class="form-control" id="edit_nome{{ funil.id }}" name="nome" value="{{ funil.nome }}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="edit_etapas{{ funil.id }}" class="form-label">Etapas (uma por linha)</label>
+                                                            <textarea class="form-control" id="edit_etapas{{ funil.id }}" name="etapas" rows="3" required>{{ funil.etapas|join:"\n" }}</textarea>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Prazos (horas)</label>
+                                                            {% for etapa in funil.etapas %}
+                                                            <div class="input-group mb-2">
+                                                                <span class="input-group-text">{{ etapa }}</span>
+                                                                <input type="number" class="form-control" name="prazo_{{ etapa }}" value="{{ funil.prazos|get_item:etapa|default:24 }}" min="1" required>
+                                                            </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Taxas de Conversão (%)</label>
+                                                            {% for etapa in funil.etapas %}
+                                                                {% if not forloop.last %}
+                                                                <div class="input-group mb-2">
+                                                                    <span class="input-group-text">{{ etapa }} → {{ funil.etapas|next:forloop.counter0 }}</span>
+                                                                    <input type="number" class="form-control" name="taxa_{{ etapa }}" value="{{ funil.taxas_conversao|get_item:etapa|default:50 }}" min="0" max="100" required>
+                                                                </div>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal Excluir -->
+                                    <div class="modal fade" id="deleteFunilModal{{ funil.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Excluir Funil</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Tem certeza que deseja excluir o funil <strong>{{ funil.nome }}</strong>? Esta ação não pode ser desfeita.
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <form method="post">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="excluir">
+                                                        <input type="hidden" name="funil_id" value="{{ funil.id }}">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-danger">Excluir</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal Compartilhar -->
+                                    <div class="modal fade" id="shareFunilModal{{ funil.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Compartilhar Funil: {{ funil.nome }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <form method="post">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="compartilhar">
+                                                    <input type="hidden" name="funil_id" value="{{ funil.id }}">
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label for="usuario_id{{ funil.id }}" class="form-label">Selecionar Usuário</label>
+                                                            <select class="form-select" id="usuario_id{{ funil.id }}" name="usuario_id" required>
+                                                                <option value="">Selecione um usuário</option>
+                                                                {% for usuario in usuarios %}
+                                                                <option value="{{ usuario.id }}">{{ usuario.nome }} ({{ usuario.email }})</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-primary">Compartilhar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Nenhum funil criado ainda. Use o formulário acima para criar o primeiro.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Funis Compartilhados comigo -->
+        {% if funis_compartilhados %}
+        <div class="card mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">👥 Funis Compartilhados Comigo</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Proprietário</th>
+                                <th>Data Compartilhamento</th>
+                                <th>Etapas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for compartilhado in funis_compartilhados %}
+                            <tr>
+                                <td>{{ compartilhado.funil.nome }}</td>
+                                <td>{{ compartilhado.usuario_proprietario.get_full_name|default:compartilhado.usuario_proprietario.username }}</td>
+                                <td>{{ compartilhado.data_compartilhamento|date:"d/m/Y H:i" }}</td>
+                                <td>{{ compartilhado.funil.get_etapas_display }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para atualizar os campos de prazo e taxa conforme as etapas são digitadas
+document.getElementById('etapas').addEventListener('input', function() {
+    const etapas = this.value.split('\n').filter(etapa => etapa.trim() !== '');
+    const prazosContainer = document.getElementById('prazos-container');
+    const taxasContainer = document.getElementById('taxas-container');
+
+    // Limpar containers
+    prazosContainer.innerHTML = '';
+    taxasContainer.innerHTML = '';
+
+    // Adicionar campos de prazo para cada etapa
+    etapas.forEach((etapa, index) => {
+        const etapaTrim = etapa.trim();
+        if (etapaTrim) {
+            // Campo de prazo
+            const prazoDiv = document.createElement('div');
+            prazoDiv.className = 'input-group mb-2';
+            prazoDiv.innerHTML = `
+                <span class="input-group-text">${etapaTrim}</span>
+                <input type="number" class="form-control" name="prazo_${etapaTrim}" value="24" min="1" required>
+                <span class="input-group-text">horas</span>
+            `;
+            prazosContainer.appendChild(prazoDiv);
+
+            // Campo de taxa (apenas se não for a última etapa)
+            if (index < etapas.length - 1) {
+                const taxaDiv = document.createElement('div');
+                taxaDiv.className = 'input-group mb-2';
+                taxaDiv.innerHTML = `
+                    <span class="input-group-text">${etapaTrim} → ${etapas[index+1].trim()}</span>
+                    <input type="number" class="form-control" name="taxa_${etapaTrim}" value="50" min="0" max="100" required>
+                    <span class="input-group-text">%</span>
+                `;
+                taxasContainer.appendChild(taxaDiv);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,550 @@
+{% extends 'crm/base_crm.html' %}
+{% load static %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.report-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+    transition: all 0.3s ease;
+}
+
+.report-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.report-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.report-title i {
+    color: #007bff;
+}
+
+.stat-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 24px;
+    color: white;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+    transform: scale(1.05);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 0.95rem;
+    opacity: 0.9;
+}
+
+.stat-box.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-box.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.stat-box.warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-box.info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 20px 0;
+}
+
+.filter-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.quick-period {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.period-btn {
+    padding: 8px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 20px;
+    background: white;
+    color: #6c757d;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.period-btn:hover {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.period-btn.active {
+    background: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.data-table {
+    margin: 0;
+}
+
+.data-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+    padding: 16px;
+}
+
+.data-table td {
+    padding: 14px 16px;
+    vertical-align: middle;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+}
+
+.badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+    .stat-value {
+        font-size: 2rem;
+    }
+    
+    .report-card {
+        padding: 16px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block crm_content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-chart-bar text-primary"></i> Relatórios e Análises
+            </h2>
+            <p class="text-muted mb-0">Visualize métricas e indicadores de performance</p>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+            <button class="btn btn-outline-success">
+                <i class="fas fa-file-excel"></i> Exportar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-section">
+        <h5 class="mb-3">
+            <i class="fas fa-filter"></i> Filtros de Período
+        </h5>
+        <form method="get" class="row g-3">
+            <div class="col-12">
+                <div class="quick-period">
+                    <button type="button" class="period-btn" onclick="setPeriod(7)">Últimos 7 dias</button>
+                    <button type="button" class="period-btn active" onclick="setPeriod(30)">Últimos 30 dias</button>
+                    <button type="button" class="period-btn" onclick="setPeriod(90)">Últimos 90 dias</button>
+                    <button type="button" class="period-btn" onclick="setPeriod(365)">Último ano</button>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <label for="data_inicio" class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio">
+            </div>
+            <div class="col-md-5">
+                <label for="data_fim" class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Métricas Principais -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-box primary">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Total de Clientes</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-box success">
+                <div class="stat-value">R$ 0</div>
+                <div class="stat-label">Valor em Pipeline</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-box warning">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Tarefas Pendentes</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-box info">
+                <div class="stat-value">0%</div>
+                <div class="stat-label">Taxa de Conversão</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Relatório de Funil -->
+    <div class="report-card">
+        <div class="report-header">
+            <h5 class="report-title">
+                <i class="fas fa-funnel-dollar"></i>
+                Análise de Funil de Vendas
+            </h5>
+        </div>
+        <div class="chart-container">
+            <canvas id="funilChart"></canvas>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Origem de Clientes -->
+        <div class="col-md-6">
+            <div class="report-card">
+                <div class="report-header">
+                    <h5 class="report-title">
+                        <i class="fas fa-user-plus"></i>
+                        Origem de Clientes
+                    </h5>
+                </div>
+                <div class="chart-container">
+                    <canvas id="origemChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Atividades por Tipo -->
+        <div class="col-md-6">
+            <div class="report-card">
+                <div class="report-header">
+                    <h5 class="report-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Atividades por Tipo
+                    </h5>
+                </div>
+                <div class="chart-container">
+                    <canvas id="atividadesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance por Funil -->
+    <div class="report-card">
+        <div class="report-header">
+            <h5 class="report-title">
+                <i class="fas fa-chart-line"></i>
+                Performance por Funil
+            </h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>Funil</th>
+                        <th>Total Clientes</th>
+                        <th>Valor Total</th>
+                        <th>Taxa Conversão</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>Nenhum dado disponível para o período selecionado</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tempo Médio por Etapa -->
+    <div class="report-card">
+        <div class="report-header">
+            <h5 class="report-title">
+                <i class="fas fa-stopwatch"></i>
+                Tempo Médio por Etapa (horas)
+            </h5>
+        </div>
+        <div class="chart-container">
+            <canvas id="tempoChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Clientes -->
+    <div class="report-card">
+        <div class="report-header">
+            <h5 class="report-title">
+                <i class="fas fa-trophy"></i>
+                Top 10 Clientes por Valor
+            </h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Cliente</th>
+                        <th>Empresa</th>
+                        <th>Etapa</th>
+                        <th>Valor Estimado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>Nenhum cliente cadastrado</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Produtividade -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="report-card">
+                <div class="report-header">
+                    <h5 class="report-title">
+                        <i class="fas fa-tasks"></i>
+                        Tarefas Completadas vs Pendentes
+                    </h5>
+                </div>
+                <div class="chart-container">
+                    <canvas id="tarefasChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="report-card">
+                <div class="report-header">
+                    <h5 class="report-title">
+                        <i class="fas fa-calendar-check"></i>
+                        Atividades no Período
+                    </h5>
+                </div>
+                <div class="chart-container">
+                    <canvas id="atividadesPeriodoChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Função para definir período
+    window.setPeriod = function(days) {
+        const hoje = new Date();
+        const inicio = new Date();
+        inicio.setDate(hoje.getDate() - days);
+        
+        document.getElementById('data_inicio').value = inicio.toISOString().split('T')[0];
+        document.getElementById('data_fim').value = hoje.toISOString().split('T')[0];
+        
+        // Atualizar botões ativos
+        document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    };
+
+    // Gráfico de Funil
+    const ctxFunil = document.getElementById('funilChart');
+    if (ctxFunil) {
+        new Chart(ctxFunil, {
+            type: 'bar',
+            data: {
+                labels: ['Prospecção', 'Qualificação', 'Proposta', 'Negociação', 'Fechamento'],
+                datasets: [{
+                    label: 'Clientes por Etapa',
+                    data: [0, 0, 0, 0, 0],
+                    backgroundColor: '#007bff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Gráfico de Origem
+    const ctxOrigem = document.getElementById('origemChart');
+    if (ctxOrigem) {
+        new Chart(ctxOrigem, {
+            type: 'doughnut',
+            data: {
+                labels: ['Indicação', 'Site', 'Redes Sociais', 'Email', 'Outros'],
+                datasets: [{
+                    data: [0, 0, 0, 0, 0],
+                    backgroundColor: ['#007bff', '#28a745', '#ffc107', '#17a2b8', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // Gráfico de Atividades
+    const ctxAtividades = document.getElementById('atividadesChart');
+    if (ctxAtividades) {
+        new Chart(ctxAtividades, {
+            type: 'pie',
+            data: {
+                labels: ['Ligação', 'Email', 'Reunião', 'Follow-up', 'Outros'],
+                datasets: [{
+                    data: [0, 0, 0, 0, 0],
+                    backgroundColor: ['#dc3545', '#ffc107', '#28a745', '#17a2b8', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // Gráfico de Tempo
+    const ctxTempo = document.getElementById('tempoChart');
+    if (ctxTempo) {
+        new Chart(ctxTempo, {
+            type: 'line',
+            data: {
+                labels: ['Prospecção', 'Qualificação', 'Proposta', 'Negociação', 'Fechamento'],
+                datasets: [{
+                    label: 'Tempo Médio (horas)',
+                    data: [0, 0, 0, 0, 0],
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // Gráfico de Tarefas
+    const ctxTarefas = document.getElementById('tarefasChart');
+    if (ctxTarefas) {
+        new Chart(ctxTarefas, {
+            type: 'bar',
+            data: {
+                labels: ['Concluídas', 'Pendentes', 'Vencidas'],
+                datasets: [{
+                    data: [0, 0, 0],
+                    backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Gráfico de Atividades no Período
+    const ctxAtivPeriodo = document.getElementById('atividadesPeriodoChart');
+    if (ctxAtivPeriodo) {
+        new Chart(ctxAtivPeriodo, {
+            type: 'line',
+            data: {
+                labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                datasets: [{
+                    label: 'Atividades',
+                    data: [0, 0, 0, 0, 0, 0, 0],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // Definir período padrão (30 dias)
+    setPeriod(30);
+});
+</script>
+{% endblock %}

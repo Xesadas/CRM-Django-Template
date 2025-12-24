@@ -1,0 +1,73 @@
+{% extends 'crm/base_crm.html' %}
+
+{% block crm_content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h4 class="mb-0">Cadastrar Novo Cliente</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nome" class="form-label">Nome do Cliente*</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="telefone" class="form-label">Telefone</label>
+                            <input type="text" class="form-control" id="telefone" name="telefone" placeholder="(00) 00000-0000">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="empresa" class="form-label">Empresa</label>
+                            <input type="text" class="form-control" id="empresa" name="empresa">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="ramo_atividade" class="form-label">Ramo de Atividade</label>
+                            <input type="text" class="form-control" id="ramo_atividade" name="ramo_atividade" placeholder="Ex: Comércio, Serviços...">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tpv_medio" class="form-label">TPV Médio (R$)</label>
+                            <input type="number" step="0.01" class="form-control" id="tpv_medio" name="tpv_medio" value="0">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="funil_id" class="form-label">Funil*</label>
+                            <select class="form-select" id="funil_id" name="funil_id" required>
+                                <option value="">Selecione um funil</option>
+                                {% for funil in funis %}
+                                <option value="{{ funil.id }}">{{ funil.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="obs_livre" class="form-label">Observações</label>
+                        <textarea class="form-control" id="obs_livre" name="obs_livre" rows="3" placeholder="Anotações adicionais sobre o cliente"></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'crm:funil_vendas' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Cadastrar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,796 @@
+{% extends 'crm/base_crm.html' %}
+{% load static %}
+{% load crm_extras %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* ==================== LAYOUT PRINCIPAL ==================== */
+.container-fluid {
+    max-width: 100vw;
+    overflow-x: hidden;
+    padding: 0 15px;
+}
+
+.main-content {
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+/* ==================== COMPONENTES DO FUNIL ==================== */
+.funil-container {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.funil-header {
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.funil-title {
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 1.4em;
+    word-wrap: break-word;
+}
+
+/* ==================== ESTRUTURA DO KANBAN ==================== */
+.etapas-container {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 10px 5px 20px;
+    min-height: 500px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.etapa-column {
+    flex: 0 0 300px;
+    min-width: 300px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    min-height: 450px;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.etapa-header {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+.etapa-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.etapa-prazo {
+    font-size: 0.85em;
+    color: #6c757d;
+}
+
+.clientes-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    min-height: 200px;
+    max-height: 60vh;
+    padding-right: 5px;
+}
+
+/* ==================== CARDS DE CLIENTES ==================== */
+.cliente-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: grab;
+    transform-origin: center;
+}
+
+.cliente-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.cliente-card.dragging {
+    opacity: 0.8;
+    transform: scale(1.05) rotate(3deg);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    z-index: 1000;
+    cursor: grabbing;
+}
+
+.card-header {
+    font-size: 1.1em;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.card-body {
+    font-size: 0.9em;
+}
+
+.card-row {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.card-alert {
+    background: #fff3cd;
+    color: #856404;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    margin: 10px 0;
+    border-left: 3px solid #ffc107;
+}
+
+.card-time {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin: 8px 0;
+    padding-top: 8px;
+    border-top: 1px dashed #dee2e6;
+}
+
+.ultima-etapa-badge {
+    background: #d1ecf1;
+    color: #0c5460;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-align: center;
+    margin: 10px 0;
+}
+
+/* ==================== SELEÇÃO DE FUNIS ==================== */
+.funil-selector {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.checkbox-item {
+    flex: 0 0 auto;
+}
+
+/* ==================== MENU DE CONTEXTO ==================== */
+.context-menu {
+    display: none;
+    position: fixed;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10000;
+    min-width: 200px;
+    padding: 8px 0;
+}
+
+.context-menu-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.2s;
+    font-size: 0.9em;
+}
+
+.context-menu-item:last-child {
+    border-bottom: none;
+}
+
+.context-menu-item:hover {
+    background-color: #f8f9fa;
+}
+
+.context-menu-item.text-success:hover {
+    background-color: #d1f7e4;
+}
+
+.context-menu-item.text-danger:hover {
+    background-color: #ffe6e6;
+}
+
+.context-menu-item.text-warning:hover {
+    background-color: #fff3cd;
+}
+
+.context-menu-item.text-primary:hover {
+    background-color: #e3f2fd;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 4px 0;
+}
+
+/* ==================== ESTADOS DE DRAG & DROP ==================== */
+.drag-over {
+    background: #e3f2fd;
+    border: 2px dashed #2196f3;
+}
+
+.drop-ready {
+    background: linear-gradient(45deg, #f8f9fa 25%, #e9ecef 25%, #e9ecef 50%, #f8f9fa 50%, #f8f9fa 75%, #e9ecef 75%);
+    background-size: 20px 20px;
+    animation: slide 1s linear infinite;
+    border: 2px solid #28a745;
+}
+
+@keyframes slide {
+    0% { background-position: 0 0; }
+    100% { background-position: 20px 20px; }
+}
+
+/* ==================== ESTADOS VAZIOS ==================== */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* ==================== SCROLLBARS ==================== */
+.clientes-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.clientes-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.clientes-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.etapas-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.etapas-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.etapas-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+/* ==================== RESPONSIVIDADE ==================== */
+@media (min-width: 1920px) {
+    .etapa-column {
+        flex: 0 0 320px;
+        min-width: 320px;
+    }
+    
+    .funil-container {
+        padding: 25px;
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1919px) {
+    .etapa-column {
+        flex: 0 0 280px;
+        min-width: 280px;
+    }
+}
+
+@media (max-width: 1199px) {
+    .etapa-column {
+        flex: 0 0 250px;
+        min-width: 250px;
+    }
+    
+    .funil-container {
+        padding: 15px;
+    }
+    
+    .checkbox-group {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 767px) {
+    .etapa-column {
+        flex: 0 0 220px;
+        min-width: 220px;
+        min-height: 400px;
+        padding: 12px;
+    }
+    
+    .etapas-container {
+        gap: 10px;
+        min-height: 400px;
+        padding-bottom: 15px;
+    }
+    
+    .funil-selector {
+        padding: 15px;
+    }
+    
+    .cliente-card {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 575px) {
+    .container-fluid {
+        padding: 0 10px;
+    }
+    
+    .etapa-column {
+        flex: 0 0 200px;
+        min-width: 200px;
+    }
+    
+    .funil-container {
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .card-body {
+        font-size: 0.85em;
+    }
+    
+    .checkbox-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block crm_content %}
+<!-- Seletor de Funis para Exibição -->
+<div class="funil-selector">
+    <h5>Selecione os Funis para Exibir</h5>
+    <form method="get" class="row g-3 align-items-center">
+        <div class="col-lg-8 col-md-7">
+            <div class="checkbox-group">
+                {% for funil in todos_funis %}
+                <div class="checkbox-item form-check">
+                    <input class="form-check-input" type="checkbox" name="funis_selecionados" 
+                           value="{{ funil.id }}" id="funil_{{ funil.id }}"
+                           {% if funil.id|stringformat:"i" in funis_selecionados_ids %}checked{% endif %}>
+                    <label class="form-check-label" for="funil_{{ funil.id }}">
+                        {{ funil.nome }}
+                        {% if funil.compartilhado %}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-share-alt"></i> Compartilhado
+                        </span>
+                        {% endif %}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            <small class="form-text text-muted">Selecione um ou mais funis para visualizar</small>
+        </div>
+        <div class="col-lg-4 col-md-5">
+            <button type="submit" class="btn btn-success w-100 btn-sm">
+                <i class="fas fa-eye"></i> Exibir Funis Selecionados
+            </button>
+            <a href="{% url 'crm:funil_vendas' %}" class="btn btn-outline-secondary w-100 mt-2 btn-sm">
+                <i class="fas fa-times"></i> Limpar Seleção
+            </a>
+        </div>
+    </form>
+</div>
+
+{% if funis_para_exibir %}
+    {% for funil in funis_para_exibir %}
+    <div class="funil-container" data-funil-id="{{ funil.id }}">
+        <div class="funil-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h3 class="funil-title">{{ funil.nome }}</h3>
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if funil.compartilhado %}
+                    <span class="badge bg-secondary">
+                        <i class="fas fa-share-alt"></i> Compartilhado por {{ funil.proprietario_nome }}
+                    </span>
+                    {% endif %}
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-chart-bar"></i> {{ funil.total_clientes }} cliente(s)
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Kanban Board para este funil -->
+        <div class="etapas-container">
+            {% for etapa in funil.etapas %}
+            <div class="etapa-column" 
+                 data-funil-id="{{ funil.id }}" 
+                 data-etapa="{{ etapa }}">
+                <div class="etapa-header">
+                    <div class="etapa-title">{{ etapa }}</div>
+                    <div class="etapa-prazo">
+                        <i class="fas fa-clock"></i> Prazo: {{ funil.prazos|get_item:etapa|default:24 }}h
+                    </div>
+                </div>
+                
+                <small class="text-muted d-block mb-2">
+                    <i class="fas fa-users"></i> Clientes: {{ funil.contagem_por_etapa|get_item:etapa|default:0 }}
+                </small>
+                
+                <div class="clientes-container">
+                    {% for cliente in funil.dados_clientes %}
+                        {% if cliente.etapa == etapa %}
+                            {% include 'crm/partials/cliente_card.html' with cliente=cliente funil=funil %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if funil.contagem_por_etapa|get_item:etapa == 0 %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>Nenhum cliente nesta etapa</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="alert alert-warning mt-4">
+    <i class="fas fa-exclamation-triangle"></i> Nenhum funil selecionado ou não há funis disponíveis. 
+    {% if todos_funis %}
+    Selecione os funis que deseja visualizar acima.
+    {% else %}
+    <a href="{% url 'crm:gerenciar_funis' %}">Crie um funil</a> para começar.
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Menu de Contexto para Clientes -->
+<div id="contextMenu" class="context-menu">
+    <div class="context-menu-item text-primary" data-action="agenda">
+        <i class="fas fa-calendar-plus"></i>
+        <span>Adicionar à Agenda</span>
+    </div>
+    
+    <div class="context-menu-item text-warning" data-action="editar">
+        <i class="fas fa-edit"></i>
+        <span>Editar Cliente</span>
+    </div>
+    
+    <div class="context-menu-divider"></div>
+    
+    <div class="context-menu-item text-danger" data-action="perdido">
+        <i class="fas fa-times"></i>
+        <span>Marcar como Perdido</span>
+    </div>
+    
+    <div class="context-menu-item text-success" data-action="ativo" style="display: none;">
+        <i class="fas fa-check"></i>
+        <span>Registrar como Ativo</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+// ==================== GERENCIADOR DE DRAG & DROP ====================
+class DragManager {
+    constructor() {
+        this.dragStartX = 0;
+        this.currentCard = null;
+        this.isDragging = false;
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        document.addEventListener('dragstart', this.handleDragStart.bind(this));
+        document.addEventListener('dragover', this.handleDragOver.bind(this));
+        document.addEventListener('dragend', this.handleDragEnd.bind(this));
+        document.addEventListener('drop', this.handleDrop.bind(this));
+        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
+    }
+
+    handleDragStart(e) {
+        if (e.button === 2 || !e.target.classList.contains('cliente-card')) return;
+        
+        this.currentCard = e.target;
+        this.dragStartX = e.clientX;
+        this.isDragging = true;
+        
+        this.currentCard.classList.add('dragging');
+        setTimeout(() => this.currentCard.style.opacity = '0.7', 0);
+        
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.currentCard.dataset.clienteId);
+        e.dataTransfer.setData('funil-original', this.currentCard.dataset.funilOriginal);
+    }
+
+    handleDragOver(e) {
+        e.preventDefault();
+        const column = e.target.closest('.etapa-column');
+        if (column) {
+            document.querySelectorAll('.etapa-column').forEach(col => col.classList.remove('drag-over'));
+            column.classList.add('drag-over');
+        }
+    }
+
+    handleMouseMove(e) {
+        if (!this.isDragging || !this.currentCard) return;
+        
+        const diffX = e.clientX - this.dragStartX;
+        this.currentCard.classList.remove('drag-left', 'drag-right');
+        
+        if (Math.abs(diffX) > 20) {
+            this.currentCard.classList.add(diffX > 0 ? 'drag-right' : 'drag-left');
+        }
+    }
+
+    handleDragEnd() {
+        this.isDragging = false;
+        document.querySelectorAll('.etapa-column').forEach(col => {
+            col.classList.remove('drag-over', 'drop-ready');
+        });
+        
+        if (this.currentCard) {
+            this.currentCard.classList.remove('dragging', 'drag-left', 'drag-right');
+            this.currentCard.style.opacity = '1';
+            this.currentCard = null;
+        }
+    }
+
+    async handleDrop(e) {
+        e.preventDefault();
+        const column = e.target.closest('.etapa-column');
+        if (!column) return;
+
+        this.isDragging = false;
+        column.classList.remove('drag-over');
+        column.classList.add('drop-ready');
+
+        const clienteId = e.dataTransfer.getData('text/plain');
+        const novaEtapa = column.dataset.etapa;
+        const novoFunilId = column.dataset.funilId;
+
+        try {
+            const response = await fetch("{% url 'crm:mover_cliente' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'HX-Request': 'true'
+                },
+                body: JSON.stringify({ cliente_id: clienteId, nova_etapa: novaEtapa, novo_funil_id: novoFunilId })
+            });
+
+            if (response.ok) {
+                const cardHtml = await response.text();
+                const originalCard = document.querySelector(`[data-cliente-id="${clienteId}"]`);
+                
+                if (originalCard) {
+                    originalCard.style.opacity = '0';
+                    setTimeout(() => originalCard.remove(), 300);
+                }
+                
+                const clientesContainer = column.querySelector('.clientes-container');
+                const emptyState = clientesContainer.querySelector('.empty-state');
+                if (emptyState) emptyState.remove();
+                
+                clientesContainer.insertAdjacentHTML('beforeend', cardHtml);
+                const newCard = clientesContainer.lastElementChild;
+                newCard.style.opacity = '0';
+                newCard.style.transform = 'scale(0.8)';
+                
+                setTimeout(() => {
+                    newCard.style.transition = 'all 0.3s ease';
+                    newCard.style.opacity = '1';
+                    newCard.style.transform = 'scale(1)';
+                }, 10);
+                
+                this.showNotification(`✅ Cliente movido para ${novaEtapa}`, 'success');
+            } else {
+                const data = await response.json();
+                this.showNotification('❌ Erro ao mover cliente: ' + data.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('❌ Erro ao mover cliente', 'error');
+        } finally {
+            setTimeout(() => column.classList.remove('drop-ready'), 1000);
+        }
+    }
+
+    showNotification(message, type) {
+        document.querySelectorAll('.alert.position-fixed').forEach(alert => alert.remove());
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+}
+
+// ==================== GERENCIADOR DE MENU DE CONTEXTO ====================
+class ContextMenuManager {
+    constructor() {
+        this.contextMenu = document.getElementById('contextMenu');
+        this.currentCard = null;
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        document.addEventListener('contextmenu', this.handleContextMenu.bind(this));
+        document.addEventListener('click', this.handleClickOutside.bind(this));
+        this.contextMenu.addEventListener('click', this.handleMenuAction.bind(this));
+        
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('.cliente-card')) e.preventDefault();
+        });
+    }
+
+    handleContextMenu(e) {
+        const card = e.target.closest('.cliente-card');
+        if (!card) {
+            this.hideContextMenu();
+            return;
+        }
+
+        e.preventDefault();
+        this.currentCard = card;
+        
+        const ativoOption = this.contextMenu.querySelector('[data-action="ativo"]');
+        ativoOption.style.display = card.dataset.ultimaEtapa === 'true' ? 'block' : 'none';
+        
+        this.showContextMenu(e.clientX, e.clientY);
+    }
+
+    handleClickOutside(e) {
+        if (!this.contextMenu.contains(e.target) && !e.target.closest('.cliente-card')) {
+            this.hideContextMenu();
+        }
+    }
+
+    handleMenuAction(e) {
+        const menuItem = e.target.closest('.context-menu-item');
+        if (!menuItem || !this.currentCard) return;
+
+        const action = menuItem.dataset.action;
+        const urls = {
+            'agenda': this.currentCard.dataset.urlAgendar,
+            'perdido': this.currentCard.dataset.urlPerdido,
+            'ativo': this.currentCard.dataset.urlAtivo, 
+            'editar': this.currentCard.dataset.urlEditar,
+            'ativo': this.currentCard.dataset.urlAtivo
+        };
+         if (urls[action]) {
+            window.location.href = urls[action];
+        }
+
+        this.hideContextMenu();
+    }
+
+    editarCliente(clienteId) {
+        this.showNotification('✏️ Funcionalidade de edição em desenvolvimento', 'info');
+    }
+
+    showContextMenu(x, y) {
+        const menuRect = this.contextMenu.getBoundingClientRect();
+        const viewport = { width: window.innerWidth, height: window.innerHeight };
+
+        if (x + menuRect.width > viewport.width) x = viewport.width - menuRect.width - 10;
+        if (y + menuRect.height > viewport.height) y = viewport.height - menuRect.height - 10;
+
+        this.contextMenu.style.left = x + 'px';
+        this.contextMenu.style.top = y + 'px';
+        this.contextMenu.style.display = 'block';
+    }
+
+    hideContextMenu() {
+        this.contextMenu.style.display = 'none';
+        this.currentCard = null;
+    }
+
+    showNotification(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+}
+
+// ==================== INICIALIZAÇÃO ====================
+document.addEventListener('DOMContentLoaded', function() {
+    window.dragManager = new DragManager();
+    window.contextMenuManager = new ContextMenuManager();
+    
+    if (typeof htmx !== 'undefined') {
+        htmx.config.useTemplateFragments = true;
+    }
+    
+    updateEmptyStates();
+});
+
+function updateEmptyStates() {
+    document.querySelectorAll('.etapa-column').forEach(column => {
+        const container = column.querySelector('.clientes-container');
+        const hasClients = container.querySelector('.cliente-card');
+        const hasEmptyState = container.querySelector('.empty-state');
+        
+        if (!hasClients && !hasEmptyState) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>Nenhum cliente nesta etapa</p>
+                </div>
+            `;
+        } else if (hasClients && hasEmptyState) {
+            hasEmptyState.remove();
+        }
+    });
+}
+
+function getCookie(name) {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [cookieName, cookieValue] = cookie.trim().split('=');
+        if (cookieName === name) return decodeURIComponent(cookieValue);
+    }
+    return null;
+}
+
+window.updateEmptyStates = updateEmptyStates;
+</script>
+{% endblock %}

@@ -1,0 +1,320 @@
+{% extends 'crm/base_crm.html' %}
+{% load static %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.form-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-section-title i {
+    color: #007bff;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+}
+
+.priority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.priority-badge input[type="radio"] {
+    display: none;
+}
+
+.priority-badge:hover {
+    transform: translateY(-2px);
+}
+
+.priority-badge.active {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.badge-urgente { background: #fee; color: #dc3545; }
+.badge-urgente.active { background: #dc3545; color: white; }
+
+.badge-alta { background: #fff3cd; color: #856404; }
+.badge-alta.active { background: #ffc107; color: #000; }
+
+.badge-media { background: #d1ecf1; color: #0c5460; }
+.badge-media.active { background: #17a2b8; color: white; }
+
+.badge-baixa { background: #e2e3e5; color: #6c757d; }
+.badge-baixa.active { background: #6c757d; color: white; }
+
+.btn {
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 768px) {
+    .form-card {
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block crm_content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-edit text-warning"></i> Editar Tarefa
+            </h2>
+            <p class="text-muted mb-0">Atualize os dados da tarefa</p>
+        </div>
+        <a href="{% url 'crm:tarefas_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <!-- Formulário -->
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="form-card">
+                <form method="post" id="formTarefa">
+                    {% csrf_token %}
+                    
+                    <!-- Informações Básicas -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Informações Básicas
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título da Tarefa *</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" 
+                                   value="{{ tarefa.titulo }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="4">{{ tarefa.descricao }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo" class="form-label">Tipo de Tarefa *</label>
+                                <select class="form-select" id="tipo" name="tipo" required>
+                                    <option value="ligacao" {% if tarefa.tipo == 'ligacao' %}selected{% endif %}>📞 Ligação</option>
+                                    <option value="email" {% if tarefa.tipo == 'email' %}selected{% endif %}>📧 Email</option>
+                                    <option value="reuniao" {% if tarefa.tipo == 'reuniao' %}selected{% endif %}>👥 Reunião</option>
+                                    <option value="proposta" {% if tarefa.tipo == 'proposta' %}selected{% endif %}>📄 Enviar Proposta</option>
+                                    <option value="followup" {% if tarefa.tipo == 'followup' %}selected{% endif %}>🔄 Follow-up</option>
+                                    <option value="negociacao" {% if tarefa.tipo == 'negociacao' %}selected{% endif %}>💰 Negociação</option>
+                                    <option value="visita" {% if tarefa.tipo == 'visita' %}selected{% endif %}>🚗 Visita</option>
+                                    <option value="apresentacao" {% if tarefa.tipo == 'apresentacao' %}selected{% endif %}>📊 Apresentação</option>
+                                    <option value="outros" {% if tarefa.tipo == 'outros' %}selected{% endif %}>📋 Outros</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">Status *</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="pendente" {% if tarefa.status == 'pendente' %}selected{% endif %}>⏳ Pendente</option>
+                                    <option value="em_andamento" {% if tarefa.status == 'em_andamento' %}selected{% endif %}>🔄 Em Andamento</option>
+                                    <option value="concluida" {% if tarefa.status == 'concluida' %}selected{% endif %}>✅ Concluída</option>
+                                    <option value="cancelada" {% if tarefa.status == 'cancelada' %}selected{% endif %}>❌ Cancelada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prioridade -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Prioridade
+                        </h5>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            <label class="priority-badge badge-urgente {% if tarefa.prioridade == 'urgente' %}active{% endif %}">
+                                <input type="radio" name="prioridade" value="urgente" {% if tarefa.prioridade == 'urgente' %}checked{% endif %}>
+                                <i class="fas fa-fire"></i>
+                                <span>Urgente</span>
+                            </label>
+                            
+                            <label class="priority-badge badge-alta {% if tarefa.prioridade == 'alta' %}active{% endif %}">
+                                <input type="radio" name="prioridade" value="alta" {% if tarefa.prioridade == 'alta' %}checked{% endif %}>
+                                <i class="fas fa-arrow-up"></i>
+                                <span>Alta</span>
+                            </label>
+                            
+                            <label class="priority-badge badge-media {% if tarefa.prioridade == 'media' %}active{% endif %}">
+                                <input type="radio" name="prioridade" value="media" {% if tarefa.prioridade == 'media' %}checked{% endif %}>
+                                <i class="fas fa-equals"></i>
+                                <span>Média</span>
+                            </label>
+                            
+                            <label class="priority-badge badge-baixa {% if tarefa.prioridade == 'baixa' %}active{% endif %}">
+                                <input type="radio" name="prioridade" value="baixa" {% if tarefa.prioridade == 'baixa' %}checked{% endif %}>
+                                <i class="fas fa-arrow-down"></i>
+                                <span>Baixa</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Vinculação -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="fas fa-link"></i>
+                            Vinculação
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cliente" class="form-label">Cliente (opcional)</label>
+                                <select class="form-select" id="cliente" name="cliente">
+                                    <option value="">Nenhum cliente</option>
+                                    {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}" {% if tarefa.cliente_id == cliente.id %}selected{% endif %}>{{ cliente.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Vincule esta tarefa a um cliente específico</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="responsavel" class="form-label">Responsável</label>
+                                <select class="form-select" id="responsavel" name="responsavel">
+                                    {% for usuario in usuarios %}
+                                    <option value="{{ usuario.id }}" {% if tarefa.responsavel_id == usuario.id %}selected{% endif %}>{{ usuario.get_full_name|default:usuario.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prazos -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            Prazos e Lembretes
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="data_vencimento" class="form-label">Data de Vencimento *</label>
+                                <input type="datetime-local" class="form-control" id="data_vencimento" 
+                                       name="data_vencimento" value="{{ tarefa.data_vencimento|date:'Y-m-d\TH:i' }}" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="lembrete" class="form-label">Lembrete</label>
+                                <input type="datetime-local" class="form-control" id="lembrete" 
+                                       name="lembrete" value="{{ tarefa.lembrete|date:'Y-m-d\TH:i' }}">
+                                <div class="form-text">Receba um lembrete antes do vencimento</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tempo_estimado" class="form-label">Tempo Estimado (minutos)</label>
+                            <input type="number" class="form-control" id="tempo_estimado" 
+                                   name="tempo_estimado" min="1" value="{{ tarefa.tempo_estimado }}" placeholder="Ex: 30">
+                            <div class="form-text">Quanto tempo você estima para completar esta tarefa?</div>
+                        </div>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'crm:tarefas_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gerenciar seleção de prioridade
+    const priorityBadges = document.querySelectorAll('.priority-badge');
+    
+    priorityBadges.forEach(badge => {
+        badge.addEventListener('click', function() {
+            priorityBadges.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            this.querySelector('input[type="radio"]').checked = true;
+        });
+    });
+
+    // Validação do formulário
+    const form = document.getElementById('formTarefa');
+    form.addEventListener('submit', function(e) {
+        const titulo = document.getElementById('titulo').value.trim();
+        const dataVenc = document.getElementById('data_vencimento').value;
+        
+        if (!titulo || !dataVenc) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}

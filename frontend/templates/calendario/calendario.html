@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load calendario_extras %}
+
+{% block title %}Calendário de Tarefas - Sistema{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/calendario_tarefas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <!-- Header com resumo -->
+    <div class="tasks-header mb-4">
+        <h2 class="mb-3">Calendário de Tarefas</h2>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <h6>Total de Tarefas</h6>
+                    <div class="value">{{ total_tarefas }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <h6>Pendentes</h6>
+                    <div class="value pending">{{ tarefas_pendentes }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <h6>Concluídas</h6>
+                    <div class="value completed">{{ tarefas_concluidas }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <h6>Atrasadas</h6>
+                    <div class="value overdue">{{ tarefas_atrasadas }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendário -->
+    <div class="calendar-tasks">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="mb-0">{{ mes_nome }} de {{ ano }}</h3>
+            <div class="btn-group">
+                <a href="?ano={{ ano }}&mes={{ mes }}&mes_anterior=1" class="btn btn-outline-dark btn-sm">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+                <a href="?ano={{ hoje.year }}&mes={{ hoje.month }}" class="btn btn-dark btn-sm">
+                    Hoje
+                </a>
+                <a href="?ano={{ ano }}&mes={{ mes }}&proximo_mes=1" class="btn btn-outline-dark btn-sm">
+                    Próximo <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <table class="calendar-table">
+            <thead>
+                <tr>
+                    <th>Domingo</th>
+                    <th>Segunda</th>
+                    <th>Terça</th>
+                    <th>Quarta</th>
+                    <th>Quinta</th>
+                    <th>Sexta</th>
+                    <th>Sábado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for week in cal %}
+                <tr>
+                    {% for day in week %}
+                    <td 
+                        {% if day == 0 %}class="empty-day"
+                        {% elif day == hoje.day and mes == hoje.month and ano == hoje.year %}class="current-day"
+                        {% endif %}
+                        data-dia="{{ day }}"
+                        data-mes="{{ mes }}"
+                        data-ano="{{ ano }}"
+                        oncontextmenu="showContextMenu(event, this.dataset.dia, this.dataset.mes, this.dataset.ano)"
+                    >
+                        {% if day != 0 %}
+                        <div class="calendar-day">
+                            <div class="day-number">{{ day }}</div>
+                            <div class="day-tasks">
+                                {% if day in tarefas_por_dia %}
+                                    {% for tarefa in tarefas_por_dia|get_item:day %}
+                                    <div class="task-item 
+                                        {% if tarefa.status == 'concluida' %}task-completed
+                                        {% elif tarefa.esta_atrasada %}task-overdue
+                                        {% else %}task-pending{% endif %}"
+                                        style="border-left-color: {{ tarefa.cor_categoria }};">
+                                        <div class="task-title">{{ tarefa.titulo }}</div>
+                                        <div class="task-priority priority-{{ tarefa.prioridade }}">
+                                            {{ tarefa.prioridade|capfirst }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Lista de Tarefas do Mês -->
+    <div class="tasks-list-section mt-4">
+        <h3><i class="fas fa-list"></i> Tarefas do Mês</h3>
+        
+        <!-- Filtros -->
+        <div class="filters-section mb-3">
+            <button class="filter-btn active" data-filter="todas" onclick="aplicarFiltro('todas')">
+                <i class="fas fa-list"></i> Todas
+            </button>
+            <button class="filter-btn" data-filter="pendentes" onclick="aplicarFiltro('pendentes')">
+                <i class="fas fa-clock"></i> Pendentes
+            </button>
+            <button class="filter-btn" data-filter="concluidas" onclick="aplicarFiltro('concluidas')">
+                <i class="fas fa-check-circle"></i> Concluídas
+            </button>
+            <button class="filter-btn" data-filter="atrasadas" onclick="aplicarFiltro('atrasadas')">
+                <i class="fas fa-exclamation-triangle"></i> Atrasadas
+            </button>
+            <button class="filter-btn" data-filter="alta" onclick="aplicarFiltro('alta')">
+                <i class="fas fa-exclamation"></i> Alta Prioridade
+            </button>
+        </div>
+        
+        <!-- Container das Tarefas -->
+        <div id="tarefasLista">
+            <div class="text-center py-4">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p class="mt-2">Carregando tarefas...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div id="contextMenu" class="context-menu">
+    <div class="context-menu-item" onclick="showTaskModal()">
+        <i class="fas fa-plus"></i>
+        Nova Tarefa
+    </div>
+
+    <div class="context-menu-item" onclick="viewDayDetails()">
+        <i class="fas fa-eye"></i>
+        Ver Detalhes do Dia
+    </div>
+
+    <div class="context-menu-item" onclick="showTasksForDay()">
+        <i class="fas fa-tasks"></i>
+        Ver Todas as Tarefas
+    </div>
+</div>
+
+<!-- Modal para Nova Tarefa -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Tarefa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="novaTarefaForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label">Título *</label>
+                                <input type="text" class="form-control" name="titulo" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Prioridade *</label>
+                                <select class="form-select" name="prioridade" required>
+                                    <option value="baixa">Baixa</option>
+                                    <option value="media" selected>Média</option>
+                                    <option value="alta">Alta</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea class="form-control" name="descricao" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Data de Vencimento *</label>
+                                <input type="date" class="form-control" id="data_vencimento_modal" name="data_vencimento" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Categoria</label>
+                                <div class="input-group">
+                                    <select class="form-select" name="categoria" id="categoriaSelect">
+                                        <option value="">Sem Categoria</option>
+                                        <!-- Categorias serão carregadas via AJAX -->
+                                    </select>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="showCategoriasModal()">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark">
+                        <i class="fas fa-save"></i> Salvar Tarefa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Categorias -->
+<div class="modal fade" id="categoriasModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gerenciar Categorias</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="categoriasLista" class="list-group mb-3">
+                    <!-- Categorias serão carregadas via AJAX -->
+                </div>
+                
+                <div class="mb-3">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="showNovaCategoriaModal()">
+                        <i class="fas fa-plus"></i> Nova Categoria
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Nova Categoria -->
+<div class="modal fade" id="novaCategoriaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="novaCategoriaForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nome da Categoria *</label>
+                        <input type="text" class="form-control" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cor</label>
+                        <input type="color" class="form-control form-control-color" name="cor" value="#000000">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark">Salvar Categoria</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Detalhes do Dia -->
+<div class="modal fade" id="dayModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dayModalLabel">Detalhes do Dia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dayDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/calendario_tarefas.js' %}"></script>
+{% endblock %}

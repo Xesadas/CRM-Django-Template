@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações - Sistema CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="fas fa-cog me-2"></i>Configurações
+            </h2>
+            <p class="text-muted">Gerencie suas preferências e informações da conta</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Coluna Esquerda -->
+        <div class="col-lg-6">
+            <!-- Informações do Usuário -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">
+                        <i class="fas fa-user me-2"></i>Informações do Usuário
+                    </h5>
+                    <div class="mb-3">
+                        <label class="text-muted small mb-1">Nome de usuário</label>
+                        <p class="mb-0 fw-semibold">{{ user.username }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small mb-1">Email</label>
+                        <p class="mb-0 fw-semibold">{{ user.email|default:"Não informado" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small mb-1">Tipo de conta</label>
+                        <div>
+                            {% if user.is_superuser %}
+                                <span class="badge bg-dark px-3 py-2">Administrador</span>
+                            {% else %}
+                                <span class="badge bg-secondary px-3 py-2">Usuário</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-muted small mb-1">Membro desde</label>
+                        <p class="mb-0 fw-semibold">{{ user.date_joined|date:"d/m/Y" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferências de Tema -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">
+                        <i class="fas fa-palette me-2"></i>Preferências de Tema
+                    </h5>
+                    <label class="text-muted small mb-3 d-block">Tema do Sistema</label>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-dark theme-preference py-3" data-theme="light">
+                            <i class="fas fa-sun me-2"></i>Claro
+                        </button>
+                        <button class="btn btn-dark theme-preference py-3" data-theme="dark">
+                            <i class="fas fa-moon me-2"></i>Escuro
+                        </button>
+                        <button class="btn btn-outline-dark theme-preference py-3" data-theme="system">
+                            <i class="fas fa-desktop me-2"></i>Sistema
+                        </button>
+                    </div>
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Tema atual: <strong id="currentTheme">Claro</strong>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Direita -->
+        <div class="col-lg-6">
+            <!-- Segurança da Conta -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">
+                        <i class="fas fa-key me-2"></i>Segurança da Conta
+                    </h5>
+                    <form method="post" action="{% url 'alterar_senha' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="senha_atual" class="form-label text-muted small">Senha Atual</label>
+                            <input type="password" class="form-control form-control-lg border-dark" id="senha_atual" name="senha_atual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nova_senha" class="form-label text-muted small">Nova Senha</label>
+                            <input type="password" class="form-control form-control-lg border-dark" id="nova_senha" name="nova_senha" required>
+                            <small class="form-text text-muted">A senha deve ter pelo menos 6 caracteres.</small>
+                        </div>
+                        <div class="mb-4">
+                            <label for="confirmar_senha" class="form-label text-muted small">Confirmar Nova Senha</label>
+                            <input type="password" class="form-control form-control-lg border-dark" id="confirmar_senha" name="confirmar_senha" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-dark btn-lg py-3">
+                                <i class="fas fa-lock me-2"></i>Alterar Senha
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sair da Conta -->
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-dark text-white">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="fw-bold mb-2">
+                                <i class="fas fa-sign-out-alt me-2"></i>Sair da Conta
+                            </h5>
+                            <p class="mb-0 opacity-75">
+                                Ao clicar em "Sair", você será desconectado do sistema e redirecionado para a página de login.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-light btn-lg px-5 py-3">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Sair
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    const themeNames = {
+        'light': 'Claro',
+        'dark': 'Escuro', 
+        'system': 'Sistema'
+    };
+    
+    document.getElementById('currentTheme').textContent = themeNames[currentTheme];
+
+    document.querySelectorAll('.theme-preference').forEach(button => {
+        const theme = button.getAttribute('data-theme');
+        if (theme === currentTheme) {
+            button.classList.remove('btn-outline-dark');
+            button.classList.add('btn-dark');
+        }
+        
+        button.addEventListener('click', function() {
+            const selectedTheme = this.getAttribute('data-theme');
+            localStorage.setItem('theme', selectedTheme);
+            
+            const body = document.body;
+            if (selectedTheme === 'system') {
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                body.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
+            } else {
+                body.setAttribute('data-theme', selectedTheme);
+            }
+            
+            document.getElementById('currentTheme').textContent = themeNames[selectedTheme];
+            
+            document.querySelectorAll('.theme-preference').forEach(btn => {
+                btn.classList.remove('btn-dark');
+                btn.classList.add('btn-outline-dark');
+            });
+            this.classList.remove('btn-outline-dark');
+            this.classList.add('btn-dark');
+        });
+    });
+});
+</script>
+
+<style>
+.card {
+    border-radius: 12px;
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.form-control {
+    border-radius: 8px;
+    border-width: 2px;
+}
+
+.form-control:focus {
+    border-color: #212529;
+    box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.15);
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    border-width: 2px;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.badge {
+    font-weight: 500;
+    border-radius: 6px;
+}
+
+.theme-preference {
+    text-align: left;
+    font-weight: 500;
+}
+
+.shadow-sm {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+</style>
+{% endblock %}
