@@ -2,7 +2,7 @@
 # Django CRM Template
 Um sistema completo de CRM (Customer Relationship Management) construído com **Django** para gerenciamento de vendas, clientes, tarefas e pipeline comercial.
 
-<img src="frontend/static/images/img1.png" alt="Pagina inicial do projeto" width="200">
+<img src="frontend/static/images/img1.png" alt="Pagina inicial do projeto">
 
 ## Funcionalidades:
 
@@ -16,7 +16,7 @@ Um sistema completo de CRM (Customer Relationship Management) construído com **
 
 -Múltiplos funis simultâneos
 
-<img src="frontend/static/images/img2.png" alt="Segunda imagem do projeto" width="200">
+<img src="frontend/static/images/img2.png" alt="Segunda imagem do projeto">
 Dados totalmente ficticios para ilustraçao!
 
 ## Estrutura do projeto
